@@ -18,6 +18,10 @@
             "advertisedAmount": 850,
             "convertedToGrams": 850,
             "priceNok": 54.90
+        },
+        "metabolism": {
+            "glycemicIndex": 33,
+            "glycemicLoad": 2.5
         }
     },
     {
@@ -39,6 +43,10 @@
             "advertisedAmount": 1100,
             "convertedToGrams": 1100,
             "priceNok": 28.90
+        },
+        "metabolism": {
+            "glycemicIndex": 60,
+            "glycemicLoad": 9
         }
     },
     {
@@ -60,6 +68,10 @@
             "advertisedAmount": 300,
             "convertedToGrams": 300,
             "priceNok": 39.90
+        },
+        "metabolism": {
+            "glycemicIndex": 25,
+            "glycemicLoad": 13.5
         }
     },
     {
@@ -81,6 +93,10 @@
             "advertisedAmount": 300,
             "convertedToGrams": 300,
             "priceNok": 37.90
+        },
+        "metabolism": {
+            "glycemicIndex": 30,
+            "glycemicLoad": 12.6
         }
     },
     {
@@ -102,6 +118,10 @@
             "advertisedAmount": 600,
             "convertedToGrams": 600,
             "priceNok": 39.90
+        },
+        "metabolism": {
+            "glycemicIndex": 50,
+            "glycemicLoad": 24
         }
     },
     {
@@ -123,6 +143,10 @@
             "advertisedAmount": 500,
             "convertedToGrams": 458,
             "priceNok": 155.0
+        },
+        "metabolism": {
+            "glycemicIndex": 0,
+            "glycemicLoad": 0
         }
     },
     {
@@ -144,6 +168,10 @@
             "advertisedAmount": 750,
             "convertedToGrams": 750,
             "priceNok": 38.50
+        },
+        "metabolism": {
+            "glycemicIndex": 40,
+            "glycemicLoad": 15.9
         }
     },
     {
@@ -165,6 +193,10 @@
             "advertisedAmount": 110,
             "convertedToGrams": 110,
             "priceNok": 36.90
+        },
+        "metabolism": {
+            "glycemicIndex": 0,
+            "glycemicLoad": 0
         }
     },
     {
@@ -186,6 +218,10 @@
             "advertisedAmount": 1250,
             "convertedToGrams": 1250,
             "priceNok": 150
+        },
+        "metabolism": {
+            "glycemicIndex": 57,
+            "glycemicLoad": 15.4
         }
     },
     {
@@ -207,6 +243,10 @@
             "advertisedAmount": 250,
             "convertedToGrams": 250,
             "priceNok": 129.75
+        },
+        "metabolism": {
+            "glycemicIndex": 0,
+            "glycemicLoad": 0
         }
     },
     {
@@ -228,6 +268,10 @@
             "advertisedAmount": 450,
             "convertedToGrams": 450,
             "priceNok": 25.50
+        },
+        "metabolism": {
+            "glycemicIndex": 15,
+            "glycemicLoad": 0.5
         }
     },
     {
@@ -249,6 +293,10 @@
             "advertisedAmount": 1000,
             "convertedToGrams": 1000,
             "priceNok": 39.90
+        },
+        "metabolism": {
+            "glycemicIndex": 70,
+            "glycemicLoad": 12.3
         }
     }
 ]
