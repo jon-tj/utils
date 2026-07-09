@@ -103,6 +103,20 @@ function computeMealNutrients(meal) {
     return totals;
 }
 
+// Compute total glycemic load for a meal at a given scaling factor.
+// Standard formula: GL = GI × (available carbs grams) / 100.
+function computeMealGL(meal, scale = 1) {
+    let gl = 0;
+    for (const item of meal.ingredients) {
+        const ing = findIngredient(item.name);
+        if (!ing || !ing.metabolism) continue;
+        const grams = item.amount * scale;
+        const carbGrams = (ing.per100g.carbs || 0) * grams / 100;
+        gl += (ing.metabolism.glycemicIndex || 0) * carbGrams / 100;
+    }
+    return gl;
+}
+
 function populateMealSelects() {
     const selects = MEAL_FORM_ELEMENT.querySelectorAll('[data-meal-select]');
     selects.forEach(sel => {
@@ -338,5 +352,156 @@ mealBtn.addEventListener('click', (event) => {
                 ${ingredientRows}
             </tbody>
         </table>
+        <h4>Estimated blood glucose</h4>
+        <canvas id="glucose-chart" width="720" height="260"></canvas>
     `;
+
+    drawGlucoseChart(plannedMeals);
 });
+
+// Meal times (minutes from midnight) used for the blood-glucose model.
+const MEAL_TIMES = {
+    Breakfast: 7 * 60,
+    Lunch: 12 * 60,
+    Dinner: 19 * 60,
+};
+
+// Simple post-prandial glucose response model:
+//   rise(t) = GL × PEAK_SCALE × x × exp(1 - x),  x = t / T_PEAK
+// - peaks at t = T_PEAK with value = GL × PEAK_SCALE (mg/dL)
+// - returns near baseline by ~3 h
+const BASELINE_MG_DL = 90;
+const T_PEAK_MIN = 45;
+const PEAK_SCALE = 2.0; // mg/dL per unit GL at peak
+
+function glucoseResponse(minutesSinceMeal, GL) {
+    if (minutesSinceMeal <= 0 || GL <= 0) return 0;
+    const x = minutesSinceMeal / T_PEAK_MIN;
+    return GL * PEAK_SCALE * x * Math.exp(1 - x);
+}
+
+function drawGlucoseChart(plannedMeals) {
+    const canvas = document.getElementById('glucose-chart');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width;
+    const H = canvas.height;
+
+    // Compute GL per meal + arrival time.
+    const events = plannedMeals
+        .filter(pm => pm.meal && pm.scale > 0)
+        .map(pm => ({
+            label: pm.slot.label,
+            mealName: pm.meal.name,
+            time: MEAL_TIMES[pm.slot.label],
+            GL: computeMealGL(pm.meal, pm.scale),
+        }));
+
+    // Sample glucose every 5 minutes over 24h.
+    const stepMin = 5;
+    const samples = [];
+    for (let t = 0; t <= 24 * 60; t += stepMin) {
+        let g = BASELINE_MG_DL;
+        for (const ev of events) g += glucoseResponse(t - ev.time, ev.GL);
+        samples.push({ t, g });
+    }
+
+    const yMin = 70;
+    const yMax = Math.max(160, Math.ceil(Math.max(...samples.map(s => s.g)) / 10) * 10 + 10);
+
+    // Layout.
+    const pad = { top: 20, right: 20, bottom: 40, left: 50 };
+    const plotW = W - pad.left - pad.right;
+    const plotH = H - pad.top - pad.bottom;
+
+    ctx.clearRect(0, 0, W, H);
+    ctx.font = '12px sans-serif';
+
+    const xOfMin = t => pad.left + (t / (24 * 60)) * plotW;
+    const yOfMgDl = g => pad.top + (1 - (g - yMin) / (yMax - yMin)) * plotH;
+
+    // Gridlines & y labels every 20 mg/dL.
+    ctx.strokeStyle = '#eee';
+    ctx.fillStyle = '#666';
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    for (let g = Math.ceil(yMin / 20) * 20; g <= yMax; g += 20) {
+        const y = yOfMgDl(g);
+        ctx.beginPath();
+        ctx.moveTo(pad.left, y);
+        ctx.lineTo(W - pad.right, y);
+        ctx.stroke();
+        ctx.fillText(String(g), pad.left - 6, y);
+    }
+
+    // X-axis (hours) labels every 3h.
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    for (let h = 0; h <= 24; h += 3) {
+        const x = xOfMin(h * 60);
+        ctx.strokeStyle = '#eee';
+        ctx.beginPath();
+        ctx.moveTo(x, pad.top);
+        ctx.lineTo(x, pad.top + plotH);
+        ctx.stroke();
+        ctx.fillText(`${h}:00`, x, pad.top + plotH + 6);
+    }
+
+    // Axes.
+    ctx.strokeStyle = '#333';
+    ctx.beginPath();
+    ctx.moveTo(pad.left, pad.top);
+    ctx.lineTo(pad.left, pad.top + plotH);
+    ctx.lineTo(W - pad.right, pad.top + plotH);
+    ctx.stroke();
+
+    // Baseline line.
+    ctx.strokeStyle = '#bbb';
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(pad.left, yOfMgDl(BASELINE_MG_DL));
+    ctx.lineTo(W - pad.right, yOfMgDl(BASELINE_MG_DL));
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Glucose curve.
+    ctx.strokeStyle = '#c0392b';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    samples.forEach((s, i) => {
+        const x = xOfMin(s.t);
+        const y = yOfMgDl(s.g);
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+    ctx.lineWidth = 1;
+
+    // Meal markers.
+    ctx.fillStyle = '#2980b9';
+    ctx.strokeStyle = '#2980b9';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    for (const ev of events) {
+        const x = xOfMin(ev.time);
+        ctx.beginPath();
+        ctx.moveTo(x, pad.top);
+        ctx.lineTo(x, pad.top + plotH);
+        ctx.globalAlpha = 0.25;
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+        ctx.fillText(`${ev.label} (GL ${ev.GL.toFixed(1)})`, x, pad.top - 4);
+    }
+
+    // Axis titles.
+    ctx.fillStyle = '#333';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText('Time of day', pad.left + plotW / 2, H - 4);
+    ctx.save();
+    ctx.translate(12, pad.top + plotH / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.textBaseline = 'top';
+    ctx.fillText('Blood glucose (mg/dL)', 0, 0);
+    ctx.restore();
+}

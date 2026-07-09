@@ -92,6 +92,14 @@ input {
     font-weight: bold;
 }
 
+#glucose-chart {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    background: #fff;
+    border: 1px solid #ddd;
+}
+
 #output {
     margin-top: 20px;
 }
