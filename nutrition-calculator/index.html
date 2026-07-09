@@ -97,21 +97,44 @@
             </form>
             <section id="output"></section>
             <hr>
-            <form>
+            <form id="meal-planner-form">
                 <section>
-                    <label for="dinner-calories"
-                        >What percentage is dinner calories?</label
-                    >
-                    <input
-                        type="number"
-                        name="dinner-calories"
-                        id="dinner-calories"
-                        value="30"
-                    />
+                    <label for="breakfast-share">Breakfast</label>
+                    <section class="flex-row slider">
+                        <input type="range" name="breakfast-share" id="breakfast-share" min="0" max="100" value="25" />
+                        <output for="breakfast-share" class="slider-value">25%</output>
+                    </section>
                 </section>
-                <button>How much meat should I eat for dinner?</button>
+                <section>
+                    <label for="breakfast-meal">Breakfast meal</label>
+                    <select name="breakfast-meal" id="breakfast-meal" data-meal-select></select>
+                </section>
+                <section>
+                    <label for="lunch-share">Lunch</label>
+                    <section class="flex-row slider">
+                        <input type="range" name="lunch-share" id="lunch-share" min="0" max="100" value="35" />
+                        <output for="lunch-share" class="slider-value">35%</output>
+                    </section>
+                </section>
+                <section>
+                    <label for="lunch-meal">Lunch meal</label>
+                    <select name="lunch-meal" id="lunch-meal" data-meal-select></select>
+                </section>
+                <section>
+                    <label for="dinner-share">Dinner</label>
+                    <section class="flex-row slider">
+                        <input type="range" name="dinner-share" id="dinner-share" min="0" max="100" value="40" />
+                        <output for="dinner-share" class="slider-value">40%</output>
+                    </section>
+                </section>
+                <section>
+                    <label for="dinner-meal">Dinner meal</label>
+                    <select name="dinner-meal" id="dinner-meal" data-meal-select></select>
+                </section>
+                <em id="share-total"></em>
+                <button>Plan meals</button>
             </form>
-            <section id="output-dinner"></section>
+            <section id="output-meals"></section>
         </main>
     </body>
     <script src="main.js" defer></script>
