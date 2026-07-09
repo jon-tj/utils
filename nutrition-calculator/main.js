@@ -1,7 +1,12 @@
 const FORM_ELEMENT = document.getElementById('nutrition-form');
 const OUTPUT_ELEMENT = document.getElementById('output');
+const DINNER_FORM_ELEMENT = document.querySelector('#output-dinner').previousElementSibling;
+const DINNER_OUTPUT_ELEMENT = document.getElementById('output-dinner');
 
 const btn = FORM_ELEMENT.querySelector('button');
+const dinnerBtn = DINNER_FORM_ELEMENT.querySelector('button');
+
+let lastColumns = null;
 
 const ACTIVITY_LEVELS = {
     sedentary: 1.2,
@@ -110,6 +115,7 @@ btn.addEventListener('click', (event) => {
         ['Maintenance', targetDietHealthy],
         ['Weight Gain', targetDietWeightGain],
     ];
+    lastColumns = columns;
 
     const rows = Object.keys(NUTRIENT_LABELS).map(key => {
         const [label, unit] = NUTRIENT_LABELS[key];
@@ -132,6 +138,37 @@ btn.addEventListener('click', (event) => {
             </thead>
             <tbody>
                 ${rows}
+            </tbody>
+        </table>
+    `;
+});
+
+dinnerBtn.addEventListener('click', (event) => {
+    event.preventDefault();
+
+    if (!lastColumns) {
+        DINNER_OUTPUT_ELEMENT.innerHTML = `<em>Please click "Calculate" first.</em>`;
+        return;
+    }
+
+    const dinnerShare = Number(DINNER_FORM_ELEMENT.querySelector('#dinner-calories').value) * 0.01;
+    // Assume protein share of dinner ≈ calorie share of dinner.
+    // Cooked lean meat ~27g protein per 100g.
+    const MEAT_PROTEIN_PER_GRAM = 0.27;
+    const meatCells = lastColumns.map(([, diet]) =>
+        `<td>${Math.round(diet.protein * dinnerShare / MEAT_PROTEIN_PER_GRAM)} g</td>`
+    ).join('');
+
+    DINNER_OUTPUT_ELEMENT.innerHTML = `
+        <table>
+            <thead>
+                <tr>
+                    <th></th>
+                    ${lastColumns.map(([name]) => `<th>${name}</th>`).join('')}
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>Meat (cooked)</td>${meatCells}</tr>
             </tbody>
         </table>
     `;

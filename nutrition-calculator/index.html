@@ -42,7 +42,7 @@
                 </section>
                 <section>
                     <label for="fat-prc">Body fat (%)</label>
-                    <input type="number" name="fat-prc" id="fat-prc" />
+                    <input type="number" name="fat-prc" id="fat-prc" placeholder="Optional"/>
                 </section>
                 <section>
                     <label for="slider-diet">Diet<sup>†</sup></label>
@@ -96,6 +96,22 @@
                 <button>Calculate</button>
             </form>
             <section id="output"></section>
+            <hr>
+            <form>
+                <section>
+                    <label for="dinner-calories"
+                        >What percentage is dinner calories?</label
+                    >
+                    <input
+                        type="number"
+                        name="dinner-calories"
+                        id="dinner-calories"
+                        value="30"
+                    />
+                </section>
+                <button>How much meat should I eat for dinner?</button>
+            </form>
+            <section id="output-dinner"></section>
         </main>
     </body>
     <script src="main.js" defer></script>

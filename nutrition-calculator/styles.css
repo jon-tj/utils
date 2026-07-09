@@ -56,24 +56,24 @@ input {
     font-family: sans-serif;
 }
 
-#output table {
+table {
     width: 100%;
     border-collapse: collapse;
 }
 
-#output th,
-#output td {
+th,
+td {
     padding: 8px 12px;
     border: 1px solid #ddd;
     text-align: right;
 }
 
-#output th {
+th {
     background-color: #f0f0f0;
     text-align: center;
 }
 
-#output td:first-child {
+td:first-child {
     text-align: left;
     font-weight: bold;
 }
