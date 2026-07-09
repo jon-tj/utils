@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Nutrition Calculator</title>
+        <link href="styles.css" rel="stylesheet" />
+    </head>
+    <body>
+        <main>
+            <h3>Nutrition Calculator</h3>
+            <form id="nutrition-form">
+                <section>
+                    <label for="age">Age</label>
+                    <input type="number" name="age" id="age" required />
+                </section>
+                <section>
+                    <label for="gender">Gender</label>
+                    <select name="gender" id="gender" required>
+                        <option value="">Select</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                    </select>
+                </section>
+                <section>
+                    <label for="height">Height (cm)</label>
+                    <input type="number" name="height" id="height" required />
+                </section>
+                <section>
+                    <label for="weight">Weight (kg)</label>
+                    <input type="number" name="weight" id="weight" required />
+                </section>
+                <section>
+                    <label for="activity">Activity</label>
+                    <select name="activity" id="activity" required>
+                        <option value="">Select</option>
+                        <option value="sedentary">Sedentary</option>
+                        <option value="light">Lightly Active</option>
+                        <option value="moderate">Moderately Active</option>
+                        <option value="active">Active</option>
+                    </select>
+                </section>
+                <section>
+                    <label for="fat-prc">Body fat (%)</label>
+                    <input type="number" name="fat-prc" id="fat-prc" />
+                </section>
+                <section>
+                    <label for="slider-diet">Diet<sup>†</sup></label>
+                    <section class="flex-row slider">
+                        <label>Mediterranean</label>
+                        <input
+                            type="range"
+                            name="interpolate-diet"
+                            id="interpolate-diet"
+                            min="0"
+                            max="100"
+                            value="50"
+                        />
+                        <label>ARIC</label>
+                    </section>
+                </section>
+                <section>
+                    <label for="caloric-restriction"
+                        >Caloric restriction (%)<sup>††</sup></label
+                    >
+                    <input
+                        type="number"
+                        name="caloric-restriction"
+                        id="caloric-restriction"
+                        value="15"
+                    />
+                </section>
+                <em>
+                    <sup>†</sup> The Mediterranean diet is an observed diet
+                    associated with longer life expectancy. The
+                    <a
+                        href="https://aric.cscc.unc.edu/aric9/publications/published_manuscripts"
+                        target="_blank"
+                        >ARIC study</a
+                    >
+                    is a long-term study of cardiovascular health in the United
+                    States. The ARIC diet is a constructed diet based on
+                    observed effects of diet on cardiovascular health in the
+                    ARIC study.
+                </em>
+                <em>
+                    <sup>††</sup> Caloric restriction is believed to
+                    monotonically 
+                    <a
+                        href="https://pmc.ncbi.nlm.nih.gov/articles/PMC4836177/"
+                        target="_blank"
+                        >increase life expectancy</a
+                    > up to at least 40%
+                    DR in mice.
+                </em>
+                <button>Calculate</button>
+            </form>
+            <section id="output"></section>
+        </main>
+    </body>
+    <script src="main.js" defer></script>
+</html>

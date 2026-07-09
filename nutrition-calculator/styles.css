@@ -1,0 +1,79 @@
+body {
+    margin: 0;
+}
+
+select,
+table,
+body,
+input,
+button {
+    font-family: sans-serif;
+    font-size: 1rem;
+}
+
+main {
+    width: min(100%, 800px);
+    margin: 0 auto;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+    background-color: #f9f9f9;
+    padding: 20px;
+    gap: 1rem;
+}
+
+form section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+input {
+    min-width: 0;
+}
+
+.flex-row {
+    display: flex;
+    gap: 10px;
+}
+
+.slider label {
+    flex: 0 0 auto;
+}
+
+.slider input {
+    flex: 1 1 auto;
+}
+
+#output {
+    margin-top: 20px;
+}
+
+#output .summary {
+    margin-bottom: 15px;
+    font-family: sans-serif;
+}
+
+#output table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+#output th,
+#output td {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    text-align: right;
+}
+
+#output th {
+    background-color: #f0f0f0;
+    text-align: center;
+}
+
+#output td:first-child {
+    text-align: left;
+    font-weight: bold;
+}
