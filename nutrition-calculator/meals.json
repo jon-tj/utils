@@ -1,0 +1,81 @@
+[
+    {
+        "name": "Mixed Yoghurt",
+        "makes": {
+            "amount": 1,
+            "unit": "bowl"
+        },
+        "ingredients": [
+            {
+                "name": "Greek Yoghurt 2% Fat",
+                "amount": 185
+            },
+            {
+                "name": "Oats",
+                "amount": 50
+            },
+            {
+                "name": "Pumpkin Seeds",
+                "amount": 10
+            },
+            {
+                "name": "Extra Virgin Olive Oil",
+                "amount": 6
+            },
+            {
+                "name": "Chia Seeds",
+                "amount": 8
+            },
+            {
+                "name": "Hazelnut Müsli",
+                "amount": 30
+            }
+        ]
+    },
+    {
+        "name": "Cheese Ham Sandwich",
+        "makes": {
+            "amount": 1,
+            "unit": "sandwich"
+        },
+        "ingredients": [
+            {
+                "name": "Bread",
+                "amount": 28
+            },
+            {
+                "name": "Cheese",
+                "amount": 20
+            },
+            {
+                "name": "Ham",
+                "amount": 17
+            }
+        ]
+    },
+    {
+        "name": "Beef n Broccoli",
+        "makes": {
+            "amount": 1,
+            "unit": "plate"
+        },
+        "ingredients": [
+            {
+                "name": "Beef",
+                "amount": 180
+            },
+            {
+                "name": "Broccoli",
+                "amount": 190
+            },
+            {
+                "name": "Extra Virgin Olive Oil",
+                "amount": 13
+            },
+            {
+                "name": "Potato",
+                "amount": 300
+            }
+        ]
+    }
+]

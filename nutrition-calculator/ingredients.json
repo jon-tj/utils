@@ -1,0 +1,254 @@
+[
+    {
+        "name": "Greek Yoghurt 2% Fat",
+        "per100g": {
+            "calories": 64,
+            "fatTotal": 2,
+            "SFA": 1.3,
+            "MUFA": 0.7,
+            "PUFA": 0,
+            "carbs": 3.3,
+            "sugars": 3.3,
+            "fiber": 0,
+            "protein": 8.5,
+            "salt": 0.1
+        },
+        "purchaseAmount": {
+            "advertisedUnit": "g",
+            "advertisedAmount": 850,
+            "convertedToGrams": 850,
+            "priceNok": 54.90
+        }
+    },
+    {
+        "name": "Oats",
+        "per100g": {
+            "calories": 367,
+            "fatTotal": 6.8,
+            "SFA": 1.3,
+            "MUFA": 2.8,
+            "PUFA": 2.9,
+            "carbs": 58,
+            "sugars": 1.1,
+            "fiber": 10,
+            "protein": 13,
+            "salt": 0
+        },
+        "purchaseAmount": {
+            "advertisedUnit": "g",
+            "advertisedAmount": 1100,
+            "convertedToGrams": 1100,
+            "priceNok": 28.90
+        }
+    },
+    {
+        "name": "Pumpkin Seeds",
+        "per100g": {
+            "calories": 585,
+            "fatTotal": 45.9,
+            "SFA": 9.4,
+            "MUFA": 15.5,
+            "PUFA": 21,
+            "carbs": 2,
+            "sugars": 1.3,
+            "fiber": 9,
+            "protein": 36.3,
+            "salt": 0.1
+        },
+        "purchaseAmount": {
+            "advertisedUnit": "g",
+            "advertisedAmount": 300,
+            "convertedToGrams": 300,
+            "priceNok": 39.90
+        }
+    },
+    {
+        "name": "Chia Seeds",
+        "per100g": {
+            "calories": 482,
+            "fatTotal": 34.2,
+            "SFA": 3.1,
+            "MUFA": 2.1,
+            "PUFA": 24.9,
+            "carbs": 1.8,
+            "sugars": 1.8,
+            "fiber": 41,
+            "protein": 21.4,
+            "salt": 0.0
+        },
+        "purchaseAmount": {
+            "advertisedUnit": "g",
+            "advertisedAmount": 300,
+            "convertedToGrams": 300,
+            "priceNok": 37.90
+        }
+    },
+    {
+        "name": "Hazelnut Müsli",
+        "per100g": {
+            "calories": 373,
+            "fatTotal": 7.6,
+            "SFA": 1,
+            "MUFA": 1.5,
+            "PUFA": 5.1,
+            "carbs": 60,
+            "sugars": 8.1,
+            "fiber": 9,
+            "protein": 11,
+            "salt": 0.4
+        },
+        "purchaseAmount": {
+            "advertisedUnit": "g",
+            "advertisedAmount": 600,
+            "convertedToGrams": 600,
+            "priceNok": 39.90
+        }
+    },
+    {
+        "name": "Extra Virgin Olive Oil",
+        "per100g": {
+            "calories": 824,
+            "fatTotal": 95.9,
+            "SFA": 13.9,
+            "MUFA": 74.5,
+            "PUFA": 7.5,
+            "carbs": 0,
+            "sugars": 0,
+            "fiber": 0,
+            "protein": 0,
+            "salt": 0
+        },
+        "purchaseAmount": {
+            "advertisedUnit": "ml",
+            "advertisedAmount": 500,
+            "convertedToGrams": 458,
+            "priceNok": 155.0
+        }
+    },
+    {
+        "name": "Bread",
+        "per100g": {
+            "calories": 243,
+            "fatTotal": 3.3,
+            "SFA": 0.4,
+            "MUFA": 1,
+            "PUFA": 0.4,
+            "carbs": 42.7,
+            "sugars": 0.3,
+            "fiber": 5.4,
+            "protein": 8.8,
+            "salt": 1
+        },
+        "purchaseAmount": {
+            "advertisedUnit": "g",
+            "advertisedAmount": 750,
+            "convertedToGrams": 750,
+            "priceNok": 38.50
+        }
+    },
+    {
+        "name": "Ham",
+        "per100g": {
+            "calories": 410,
+            "fatTotal": 1.8,
+            "SFA": 0.6,
+            "MUFA": 0.8,
+            "PUFA": 0.3,
+            "carbs": 1.4,
+            "sugars": 0.2,
+            "fiber": 0,
+            "protein": 19,
+            "salt": 1.8
+        },
+        "purchaseAmount": {
+            "advertisedUnit": "g",
+            "advertisedAmount": 110,
+            "convertedToGrams": 110,
+            "priceNok": 36.90
+        }
+    },
+    {
+        "name": "Cheese",
+        "per100g": {
+            "calories": 344,
+            "fatTotal": 26,
+            "SFA": 16,
+            "MUFA": 7,
+            "PUFA": 1,
+            "carbs": 0,
+            "sugars": 0,
+            "fiber": 0,
+            "protein": 27,
+            "salt": 1.2
+        },
+        "purchaseAmount": {
+            "advertisedUnit": "g",
+            "advertisedAmount": 1250,
+            "convertedToGrams": 1250,
+            "priceNok": 150
+        }
+    },
+    {
+        "name": "Beef",
+        "per100g": {
+            "calories": 201,
+            "fatTotal": 4.7,
+            "SFA": 2.2,
+            "MUFA": 2,
+            "PUFA": 0.2,
+            "carbs": 0,
+            "sugars": 0,
+            "fiber": 0,
+            "protein": 21,
+            "salt": 0.2
+        },
+        "purchaseAmount": {
+            "advertisedUnit": "g",
+            "advertisedAmount": 250,
+            "convertedToGrams": 250,
+            "priceNok": 129.75
+        }
+    },
+    {
+        "name": "Broccoli",
+        "per100g": {
+            "calories": 29,
+            "fatTotal": 0.3,
+            "SFA": 0.1,
+            "MUFA": 0.1,
+            "PUFA": 0.1,
+            "carbs": 5,
+            "sugars": 2,
+            "fiber": 3,
+            "protein": 3.2,
+            "salt": 0.0
+        },
+        "purchaseAmount": {
+            "advertisedUnit": "g",
+            "advertisedAmount": 450,
+            "convertedToGrams": 450,
+            "priceNok": 25.50
+        }
+    },
+    {
+        "name": "Potato",
+        "per100g": {
+            "calories": 72,
+            "fatTotal": 0.1,
+            "SFA": 0.05,
+            "MUFA": 0.05,
+            "PUFA": 0.0,
+            "carbs": 15.3,
+            "sugars": 2.9,
+            "fiber": 2,
+            "protein": 1.7,
+            "salt": 0.0
+        },
+        "purchaseAmount": {
+            "advertisedUnit": "g",
+            "advertisedAmount": 1000,
+            "convertedToGrams": 1000,
+            "priceNok": 39.90
+        }
+    }
+]

@@ -63,6 +63,20 @@ function normalizeDietCalories(diet, targetCalories = 2000) {
     return diet;
 }
 
+var meals = [];
+fetch('meals.json')
+    .then(response => response.json())
+    .then(data => {
+        meals = data;
+    });
+
+var ingredients = [];
+fetch('ingredients.json')
+    .then(response => response.json())
+    .then(data => {
+        ingredients = data;
+    });
+
 btn.addEventListener('click', (event) => {
     event.preventDefault();
 
