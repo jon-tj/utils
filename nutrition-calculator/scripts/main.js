@@ -92,7 +92,7 @@ function setDietTable(columns) {
 
 // Populate the per-meal breakdown table with one column per planned meal,
 // plus a final "Total" column.
-function setMealsTable(plannedMeals) {
+function setMealsTable(plannedMeals, targetDiet) {
     const table = document.getElementById('meals-table');
     resetTableColumns(table);
     const headerRow = table.tHead.rows[0];
@@ -141,7 +141,53 @@ function setMealsTable(plannedMeals) {
         const strong = document.createElement('strong');
         strong.textContent = `${Math.round(totals[key])} ${unit}`;
         totalCell.appendChild(strong);
+        const tone = targetDiet
+            ? classifyMortalityTone(key, totals[key], targetDiet[key])
+            : 'none';
+        totalCell.dataset.tone = tone;
     }
+}
+
+// -----------------------------------------------------------------------------
+// Mortality-tone classification for the Total column
+// -----------------------------------------------------------------------------
+//
+// Compares the day's total for each macro against the modeled diet target and
+// buckets the deviation into five tones. Thresholds are rough estimates of
+// where cohort-study evidence suggests a ~1–2% and ~2%+ increase in all-cause
+// mortality, using the sign of harm that has the clearest signal:
+//
+//   - protein / MUFA / PUFA / fiber : harm when *low*
+//   - SFA / sugars / salt           : harm when *high*
+//   - carbs / calories              : U-shaped (harm both ways)
+//   - fatTotal                      : no clean mortality signal → always neutral
+//
+// Values within the "weak" band on the safe side are neutral. Fractions are
+// deviation from target (e.g. 0.20 = ±20%).
+const MORTALITY_BANDS = {
+    calories: { direction: 'both', weak: 0.10, strong: 0.20 },
+    protein:  { direction: 'low',  weak: 0.15, strong: 0.30 },
+    fatTotal: null,
+    SFA:      { direction: 'high', weak: 0.15, strong: 0.30 },
+    MUFA:     { direction: 'low',  weak: 0.15, strong: 0.30 },
+    PUFA:     { direction: 'low',  weak: 0.20, strong: 0.40 },
+    carbs:    { direction: 'both', weak: 0.15, strong: 0.30 },
+    sugars:   { direction: 'high', weak: 0.25, strong: 0.50 },
+    fiber:    { direction: 'low',  weak: 0.20, strong: 0.40 },
+    salt:     { direction: 'high', weak: 0.20, strong: 0.40 },
+};
+
+function classifyMortalityTone(key, total, target) {
+    const cfg = MORTALITY_BANDS[key];
+    if (!cfg || !target || target <= 0) return 'none';
+    const dev = total / target - 1;
+    const abs = Math.abs(dev);
+    // Ignore deviations in the "safe" direction for one-sided harms.
+    if (dev > 0 && cfg.direction === 'low')  return 'none';
+    if (dev < 0 && cfg.direction === 'high') return 'none';
+    if (abs >= cfg.strong) return dev > 0 ? 'high-2' : 'low-2';
+    if (abs >= cfg.weak)   return dev > 0 ? 'high-1' : 'low-1';
+    return 'none';
 }
 
 // Replace the ingredients-table body with one row per ingredient.
@@ -357,6 +403,6 @@ btnCalculate.addEventListener('click', (event) => {
 
     setSlot('ingredients-amount', `(${Object.keys(dailyIngredientGrams).length})`);
 
-    setMealsTable(plannedMeals);
+    setMealsTable(plannedMeals, targetDiet);
     setIngredientsTable(dailyIngredientGrams);
 });

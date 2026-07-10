@@ -194,3 +194,41 @@ footer {
 .note {
     background-color: #fff8e3;
 }
+
+/* Per-meal breakdown: color the Total column by est. mortality deviation
+   from the target diet. Two shades of red = too high, two shades of blue =
+   too low, neutral gray = within an acceptable range. */
+#meals-table td[data-tone="low-2"]  { background-color: #4a90c8; color: #fff; }
+#meals-table td[data-tone="low-1"]  { background-color: #cfe2f3; }
+#meals-table td[data-tone="none"]   { background-color: #f9f9f9; }
+#meals-table td[data-tone="high-1"] { background-color: #f4cccc; }
+#meals-table td[data-tone="high-2"] { background-color: #cc4c4c; color: #fff; }
+#meals-table td[data-tone="high-2"] strong,
+#meals-table td[data-tone="low-2"]  strong { color: inherit; }
+
+.mortality-legend {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 4px 8px;
+    margin-top: 8px;
+    font-size: 0.85rem;
+    color: #444;
+}
+.mortality-legend-title {
+    grid-column: 1 / -1;
+    font-style: italic;
+    margin-bottom: 2px;
+}
+.mortality-legend .swatch {
+    display: inline-block;
+    width: 18px;
+    height: 14px;
+    border: 1px solid #bbb;
+    border-radius: 2px;
+}
+.swatch.tone-low-2  { background-color: #4a90c8; }
+.swatch.tone-low-1  { background-color: #cfe2f3; }
+.swatch.tone-none   { background-color: #f9f9f9; }
+.swatch.tone-high-1 { background-color: #f4cccc; }
+.swatch.tone-high-2 { background-color: #cc4c4c; }

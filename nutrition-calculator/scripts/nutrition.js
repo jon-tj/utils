@@ -14,7 +14,7 @@ export const MEDITERRANEAN_DIET = {
     protein: 110,
     fatTotal: 90,
     SFA: 16,
-    MUFA: 52,
+    MUFA: 48,
     PUFA: 22,
     carbs: 225,
     sugars: 50,
@@ -27,7 +27,7 @@ export const ARIC_DIET = {
     protein: 110,
     fatTotal: 80,
     SFA: 12,
-    MUFA: 48,
+    MUFA: 45,
     PUFA: 20,
     carbs: 270, // https://pmc.ncbi.nlm.nih.gov/articles/PMC6339822/
     sugars: 30,
