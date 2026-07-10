@@ -126,5 +126,42 @@
                 "amount": 13
             }
         ]
+    },
+    {
+        "name": "Chicken Rice",
+        "makes": {
+            "amount": 1,
+            "unit": "plate"
+        },
+        "ingredients": [
+            {
+                "name": "Chicken Breast Filet",
+                "amount": 180
+            },
+            {
+                "name": "Cooked Rice",
+                "amount": 200
+            },
+            {
+                "name": "Bell Pepper",
+                "amount": 100
+            },
+            {
+                "name": "Onion",
+                "amount": 60
+            },
+            {
+                "name": "Kale",
+                "amount": 50
+            },
+            {
+                "name": "Cooked Black Beans",
+                "amount": 120
+            },
+            {
+                "name": "Extra Virgin Olive Oil",
+                "amount": 10
+            }
+        ]
     }
 ]

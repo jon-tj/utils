@@ -498,5 +498,155 @@
             "glycemicIndex": 10,
             "glycemicLoad": 1
         }
+    },
+    {
+        "name": "Chicken Breast Filet",
+        "per100g": {
+            "calories": 115,
+            "fatTotal": 1.9,
+            "SFA": 0.55,
+            "MUFA": 0.7,
+            "PUFA": 0.45,
+            "carbs": 0,
+            "sugars": 0,
+            "fiber": 0,
+            "protein": 23,
+            "salt": 0.17
+        },
+        "purchaseAmount": {
+            "advertisedUnit": "g",
+            "advertisedAmount": 1000,
+            "convertedToGrams": 1000,
+            "priceNok": 149.90
+        },
+        "metabolism": {
+            "glycemicIndex": 0,
+            "glycemicLoad": 0
+        }
+    },
+    {
+        "name": "Cooked Rice",
+        "per100g": {
+            "calories": 130,
+            "fatTotal": 0.3,
+            "SFA": 0.1,
+            "MUFA": 0.1,
+            "PUFA": 0.1,
+            "carbs": 28,
+            "sugars": 0.1,
+            "fiber": 0.4,
+            "protein": 2.7,
+            "salt": 0.005
+        },
+        "purchaseAmount": {
+            "advertisedUnit": "g (dry)",
+            "advertisedAmount": 1000,
+            "convertedToGrams": 3000,
+            "priceNok": 22.90
+        },
+        "metabolism": {
+            "glycemicIndex": 65,
+            "glycemicLoad": 44
+        }
+    },
+    {
+        "name": "Bell Pepper",
+        "per100g": {
+            "calories": 35,
+            "fatTotal": 0.35,
+            "SFA": 0.05,
+            "MUFA": 0.05,
+            "PUFA": 0.15,
+            "carbs": 6.5,
+            "sugars": 4.6,
+            "fiber": 2.1,
+            "protein": 1,
+            "salt": 0.008
+        },
+        "purchaseAmount": {
+            "advertisedUnit": "unit",
+            "advertisedAmount": 2,
+            "convertedToGrams": 390,
+            "priceNok": 27.26
+        },
+        "metabolism": {
+            "glycemicIndex": 15,
+            "glycemicLoad": 0.9
+        }
+    },
+    {
+        "name": "Onion",
+        "per100g": {
+            "calories": 42,
+            "fatTotal": 0.1,
+            "SFA": 0.0,
+            "MUFA": 0.02,
+            "PUFA": 0.02,
+            "carbs": 9.7,
+            "sugars": 4.6,
+            "fiber": 1.8,
+            "protein": 1.1,
+            "salt": 0.007
+        },
+        "purchaseAmount": {
+            "advertisedUnit": "unit",
+            "advertisedAmount": 1,
+            "convertedToGrams": 160,
+            "priceNok": 5.42
+        },
+        "metabolism": {
+            "glycemicIndex": 15,
+            "glycemicLoad": 1.4
+        }
+    },
+    {
+        "name": "Kale",
+        "per100g": {
+            "calories": 40,
+            "fatTotal": 1,
+            "SFA": 0.15,
+            "MUFA": 0.1,
+            "PUFA": 0.7,
+            "carbs": 3.3,
+            "sugars": 0.2,
+            "fiber": 4.1,
+            "protein": 3.7,
+            "salt": 0.1
+        },
+        "purchaseAmount": {
+            "advertisedUnit": "g",
+            "advertisedAmount": 200,
+            "convertedToGrams": 200,
+            "priceNok": 39.90
+        },
+        "metabolism": {
+            "glycemicIndex": 15,
+            "glycemicLoad": 0.5
+        }
+    },
+    {
+        "name": "Cooked Black Beans",
+        "per100g": {
+            "calories": 132,
+            "fatTotal": 0.5,
+            "SFA": 0.15,
+            "MUFA": 0.05,
+            "PUFA": 0.2,
+            "carbs": 23.7,
+            "sugars": 0.3,
+            "fiber": 8.7,
+            "protein": 8.9,
+            "salt": 0.005
+        },
+        "purchaseAmount": {
+            "advertisedUnit": "g (drained)",
+            "advertisedAmount": 230,
+            "convertedToGrams": 230,
+            "priceNok": 26.50
+        },
+        "metabolism": {
+            "glycemicIndex": 30,
+            "glycemicLoad": 7.1
+        }
     }
 ]

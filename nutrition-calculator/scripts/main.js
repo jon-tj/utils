@@ -346,6 +346,8 @@ btn.addEventListener('click', (event) => {
         return { slot, meal, share, scale, nutrients, scaledIngredients };
     });
 
+    setSlot('ingredients-amount', `(${Object.keys(dailyIngredientGrams).length})`);
+
     setMealsTable(plannedMeals);
     setIngredientsTable(dailyIngredientGrams);
 });
