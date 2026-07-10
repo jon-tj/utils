@@ -97,7 +97,11 @@ function setMealsTable(plannedMeals, targetDiet) {
     resetTableColumns(table);
     const headerRow = table.tHead.rows[0];
 
-    for (const pm of plannedMeals) {
+    // Only render meal columns whose share is > 0; the disabled/zeroed
+    // slots would just add empty columns.
+    const visibleMeals = plannedMeals.filter(pm => pm.share > 0);
+
+    for (const pm of visibleMeals) {
         const mealName = pm.meal ? pm.meal.name : '—';
         const th = appendCell(headerRow, 'th');
         th.appendChild(document.createTextNode(pm.slot.label));
@@ -117,7 +121,7 @@ function setMealsTable(plannedMeals, targetDiet) {
 
     for (const row of table.tBodies[0].rows) {
         if (row.dataset.row === 'servings') {
-            for (const pm of plannedMeals) {
+            for (const pm of visibleMeals) {
                 const cell = appendCell(row);
                 if (!pm.meal || pm.scale === 0) {
                     cell.textContent = '—';
@@ -133,7 +137,7 @@ function setMealsTable(plannedMeals, targetDiet) {
         const key = row.dataset.nutrient;
         if (!key) continue;
         const [, unit] = NUTRIENT_LABELS[key];
-        for (const pm of plannedMeals) {
+        for (const pm of visibleMeals) {
             const v = pm.nutrients ? pm.nutrients[key] : 0;
             appendCell(row).textContent = `${Math.round(v)} ${unit}`;
         }
