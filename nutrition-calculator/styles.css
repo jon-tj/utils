@@ -31,14 +31,6 @@ aside {
     flex-direction: column;
     gap: 1rem;
 }
-.card {
-    background-color: var(--color-card-background);
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    border-radius: 0.7rem;
-}
 
 .form-handles {
     display: grid;
@@ -62,11 +54,6 @@ input:focus {
     outline: 2px solid var(--color-primary);
 }
 
-.flex-row {
-    display: flex;
-    gap: 4px;
-    align-items: center;
-}
 .slider label {
     flex: 0 0 auto;
 }
@@ -116,9 +103,6 @@ td:first-child {
 }
 
 @media (max-width: 600px) {
-    main {
-        padding: 0 8px;
-    }
     form {
         padding: 12px;
     }

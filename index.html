@@ -1,1 +1,50 @@
-<a href="nutrition-calculator/">Nutrition Calculator</a>
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Jons Utils</title>
+        <link rel="stylesheet" href="shared/theme.css" />
+    </head>
+    <body>
+        <main>
+            <h3>Jons Utils</h3>
+            <hr />
+            <section class="grid-container">
+                <a href="nutrition-calculator/">
+                    <button class="primary">Nutrition Calculator</button>
+                </a>
+                <p>Calculate nutrients</p>
+
+                <a href="apartment-calculator/">
+                    <button class="primary">Real Estate Calculator</button>
+                </a>
+                <p>Compare real estate and index fund investments</p>
+            </section>
+
+            <section class="card">
+                <h4>About</h4>
+                <p>
+                    This is a collection of utilities that I have created for my
+                    own use. I have decided to make them public in case they are
+                    useful to anyone else.
+                </p>
+            </section>
+        </main>
+    </body>
+    <style>
+        .grid-container {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 0 1rem;
+            align-items: center;
+        }
+        .grid-container a,
+        .grid-container button.primary {
+            width: 100%;
+        }
+        h4 {
+            margin: 0;
+        }
+    </style>
+</html>
