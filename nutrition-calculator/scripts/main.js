@@ -211,8 +211,39 @@ FORM_ELEMENT.addEventListener('input', () => {
 
 ready.then(() => {
     populateMealSelects();
+    restoreFormState();
     FORM_ELEMENT.dispatchEvent(new Event('input'));
 });
+
+// -----------------------------------------------------------------------------
+// Persistence
+// -----------------------------------------------------------------------------
+
+const STORAGE_KEY = 'nutrition-calculator:form';
+
+function saveFormState() {
+    const state = {};
+    FORM_ELEMENT.querySelectorAll('input[id], select[id]').forEach(el => {
+        state[el.id] = el.value;
+    });
+    try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch { /* ignore quota / privacy-mode errors */ }
+}
+
+function restoreFormState() {
+    let state;
+    try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        state = JSON.parse(raw);
+    } catch { return; }
+    if (!state || typeof state !== 'object') return;
+    for (const [id, value] of Object.entries(state)) {
+        const el = FORM_ELEMENT.querySelector('#' + CSS.escape(id));
+        if (el) el.value = value;
+    }
+}
 
 // -----------------------------------------------------------------------------
 // Main click handler
@@ -220,6 +251,8 @@ ready.then(() => {
 
 btn.addEventListener('click', (event) => {
     event.preventDefault();
+
+    saveFormState();
 
     // ---- 1. BMR / TDEE / diet targets --------------------------------------
     const age = Number(FORM_ELEMENT.querySelector('#age').value);
