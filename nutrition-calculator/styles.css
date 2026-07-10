@@ -24,6 +24,17 @@ button:hover {
     background-color: #3a5a39;
 }
 
+button.transparent {
+    background-color: transparent;
+    color: #2a4229;
+    border: 1px solid #2a4229;
+}
+
+button.transparent:hover {
+    background-color: #2a4229;
+    color: #ececec;
+}
+
 main {
     width: min(100%, 1700px);
     margin: auto;
@@ -69,6 +80,11 @@ aside {
     flex-direction: column;
     gap: 1rem;
     border-radius: 0.7rem;
+}
+
+.form-handles {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
 }
 
 form section {

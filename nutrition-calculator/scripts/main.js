@@ -17,7 +17,16 @@ import {
 } from './nutrition.js';
 
 const FORM_ELEMENT = document.getElementById('nutrition-form');
-const btn = FORM_ELEMENT.querySelector('button');
+const btnCalculate = FORM_ELEMENT.querySelector('button#btn-calculate');
+const btnReset = FORM_ELEMENT.querySelector('button#btn-reset');
+
+btnReset.addEventListener('click', (event) => {
+    event.preventDefault();
+    try { localStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
+    FORM_ELEMENT.reset();
+    FORM_ELEMENT.dispatchEvent(new Event('input'));
+    if (FORM_ELEMENT.checkValidity()) btnCalculate.click();
+});
 
 // -----------------------------------------------------------------------------
 // DOM helpers
@@ -213,7 +222,7 @@ ready.then(() => {
     populateMealSelects();
     restoreFormState();
     FORM_ELEMENT.dispatchEvent(new Event('input'));
-    if (FORM_ELEMENT.checkValidity()) btn.click();
+    if (FORM_ELEMENT.checkValidity()) btnCalculate.click();
 });
 
 // -----------------------------------------------------------------------------
@@ -250,7 +259,7 @@ function restoreFormState() {
 // Main click handler
 // -----------------------------------------------------------------------------
 
-btn.addEventListener('click', (event) => {
+btnCalculate.addEventListener('click', (event) => {
     event.preventDefault();
 
     saveFormState();
