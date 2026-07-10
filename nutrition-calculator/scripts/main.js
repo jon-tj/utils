@@ -158,8 +158,8 @@ function setIngredientsTable(dailyIngredientGrams) {
         if (ing && ing.purchaseAmount && grams > 0) {
             const p = ing.purchaseAmount;
             const days = p.convertedToGrams / grams;
-            const daysDisplay = days >= 1 ? days.toFixed(1) : days.toFixed(2);
-            freq = `1×${p.advertisedAmount}${p.advertisedUnit} every ${daysDisplay} day${days === 1 ? '' : 's'}`;
+            const daysDisplay = days >= 1 ? days.toFixed(0) : days.toFixed(1);
+            freq = `1×${p.advertisedAmount} ${p.advertisedUnit} / ${daysDisplay} day${days === 1 ? '' : 's'}`;
             if (p.priceNok != null) {
                 const perDay = (grams / p.convertedToGrams) * p.priceNok;
                 price = `${perDay.toFixed(2)} kr/day`;
