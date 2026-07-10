@@ -139,22 +139,45 @@ function setMealsTable(plannedMeals) {
 function setIngredientsTable(dailyIngredientGrams) {
     const tbody = document.querySelector('#ingredients-table tbody');
     tbody.replaceChildren();
+    let totalPricePerDay = 0;
+    let anyPriced = false;
     for (const name of Object.keys(dailyIngredientGrams).sort()) {
         const grams = dailyIngredientGrams[name];
         const ing = ingredients.find(i => i.name === name);
         let freq = '—';
+        let price = '—';
         if (ing && ing.purchaseAmount && grams > 0) {
             const p = ing.purchaseAmount;
             const days = p.convertedToGrams / grams;
             const daysDisplay = days >= 1 ? days.toFixed(1) : days.toFixed(2);
             freq = `1×${p.advertisedAmount}${p.advertisedUnit} every ${daysDisplay} day${days === 1 ? '' : 's'}`;
+            if (p.priceNok != null) {
+                const perDay = (grams / p.convertedToGrams) * p.priceNok;
+                price = `${perDay.toFixed(2)} kr/day`;
+                totalPricePerDay += perDay;
+                anyPriced = true;
+            }
         }
         const tr = document.createElement('tr');
         appendCell(tr).textContent = name;
         appendCell(tr).textContent = `${Math.round(grams)} g/day`;
         appendCell(tr).textContent = freq;
+        appendCell(tr).textContent = price;
         tbody.appendChild(tr);
     }
+
+    const totalRow = document.createElement('tr');
+    const labelCell = appendCell(totalRow);
+    const labelStrong = document.createElement('strong');
+    labelStrong.textContent = 'Subtotal';
+    labelCell.appendChild(labelStrong);
+    appendCell(totalRow);
+    appendCell(totalRow);
+    const priceCell = appendCell(totalRow);
+    const priceStrong = document.createElement('strong');
+    priceStrong.textContent = anyPriced ? `${totalPricePerDay.toFixed(2)} kr/day` : '—';
+    priceCell.appendChild(priceStrong);
+    tbody.appendChild(totalRow);
 }
 
 // -----------------------------------------------------------------------------
