@@ -12,8 +12,40 @@ button {
 }
 
 main {
-    width: min(100%, 800px);
+    width: min(100%, 1400px);
     margin: 0 auto;
+    padding: 0 16px;
+}
+
+.layout {
+    display: grid;
+    grid-template-columns: minmax(320px, 420px) 1fr;
+    gap: 24px;
+    align-items: start;
+}
+
+.layout > form {
+    position: sticky;
+    top: 12px;
+}
+
+.output-panel {
+    min-width: 0;
+}
+
+@media (max-width: 900px) {
+    .layout {
+        grid-template-columns: 1fr;
+    }
+    .layout > form {
+        position: static;
+    }
+}
+
+form hr {
+    border: none;
+    border-top: 1px solid #ccc;
+    margin: 4px 0;
 }
 
 form {
@@ -92,12 +124,21 @@ input {
     font-weight: bold;
 }
 
-#glucose-chart {
+#glucose-chart,
+#ketone-chart {
     display: block;
+    width: 100%;
     max-width: 100%;
     height: auto;
     background: #fff;
     border: 1px solid #ddd;
+}
+
+/* Let wide tables scroll horizontally instead of blowing out the layout. */
+#output,
+#output-meals {
+    max-width: 100%;
+    overflow-x: auto;
 }
 
 #output {
@@ -129,4 +170,22 @@ th {
 td:first-child {
     text-align: left;
     font-weight: bold;
+}
+
+@media (max-width: 600px) {
+    main {
+        padding: 0 8px;
+    }
+    form {
+        padding: 12px;
+    }
+    form section {
+        grid-template-columns: 1fr;
+        gap: 4px;
+    }
+    th,
+    td {
+        padding: 6px 8px;
+        font-size: 0.9rem;
+    }
 }

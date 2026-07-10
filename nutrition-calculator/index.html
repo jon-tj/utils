@@ -9,162 +9,175 @@
     <body>
         <main>
             <h3>Nutrition Calculator</h3>
-            <form id="nutrition-form">
-                <section>
-                    <label for="age">Age</label>
-                    <input type="number" name="age" id="age" required />
-                </section>
-                <section>
-                    <label for="gender">Gender</label>
-                    <select name="gender" id="gender" required>
-                        <option value="">Select</option>
-                        <option value="male">Male</option>
-                        <option value="female">Female</option>
-                    </select>
-                </section>
-                <section>
-                    <label for="height">Height (cm)</label>
-                    <input type="number" name="height" id="height" required />
-                </section>
-                <section>
-                    <label for="weight">Weight (kg)</label>
-                    <input type="number" name="weight" id="weight" required />
-                </section>
-                <section>
-                    <label for="activity">Activity</label>
-                    <select name="activity" id="activity" required>
-                        <option value="">Select</option>
-                        <option value="sedentary">Sedentary</option>
-                        <option value="light">Lightly Active</option>
-                        <option value="moderate">Moderately Active</option>
-                        <option value="active">Active</option>
-                    </select>
-                </section>
-                <section>
-                    <label for="fat-prc">Body fat (%)</label>
-                    <input type="number" name="fat-prc" id="fat-prc" placeholder="Optional"/>
-                </section>
-                <section>
-                    <label for="slider-diet">Diet<sup>†</sup></label>
-                    <section class="flex-row slider">
-                        <label>Mediterranean</label>
+            <div class="layout">
+                <form id="nutrition-form">
+                    <section>
+                        <label for="age">Age</label>
+                        <input type="number" name="age" id="age" value="24" required />
+                    </section>
+                    <section>
+                        <label for="gender">Gender</label>
+                        <select name="gender" id="gender" required>
+                            <option value="">Select</option>
+                            <option value="male" selected>Male</option>
+                            <option value="female">Female</option>
+                        </select>
+                    </section>
+                    <section>
+                        <label for="height">Height (cm)</label>
+                        <input type="number" name="height" id="height" value="183" required />
+                    </section>
+                    <section>
+                        <label for="weight">Weight (kg)</label>
+                        <input type="number" name="weight" id="weight" value="72" required />
+                    </section>
+                    <section>
+                        <label for="activity">Activity</label>
+                        <select name="activity" id="activity" required>
+                            <option value="">Select</option>
+                            <option value="sedentary">Sedentary</option>
+                            <option value="light" selected>Lightly Active</option>
+                            <option value="moderate">Moderately Active</option>
+                            <option value="active">Active</option>
+                        </select>
+                    </section>
+                    <section>
+                        <label for="fat-prc">Body fat (%)</label>
+                        <input type="number" name="fat-prc" id="fat-prc" value="13" placeholder="Optional"/>
+                    </section>
+                    <section>
+                        <label for="slider-diet">Diet<sup>&dagger;</sup></label>
+                        <section class="flex-row slider">
+                            <label>Mediterranean</label>
+                            <input
+                                type="range"
+                                name="interpolate-diet"
+                                id="interpolate-diet"
+                                min="0"
+                                max="100"
+                                value="50"
+                            />
+                            <label>ARIC</label>
+                        </section>
+                    </section>
+                    <section>
+                        <label for="caloric-restriction"
+                            >Caloric restriction (%)<sup>&dagger;&dagger;</sup></label
+                        >
                         <input
-                            type="range"
-                            name="interpolate-diet"
-                            id="interpolate-diet"
-                            min="0"
-                            max="100"
-                            value="50"
+                            type="number"
+                            name="caloric-restriction"
+                            id="caloric-restriction"
+                            value="15"
                         />
-                        <label>ARIC</label>
                     </section>
-                </section>
-                <section>
-                    <label for="caloric-restriction"
-                        >Caloric restriction (%)<sup>††</sup></label
-                    >
-                    <input
-                        type="number"
-                        name="caloric-restriction"
-                        id="caloric-restriction"
-                        value="15"
-                    />
-                </section>
-                <section>
-                    <label for="bhb-24h"
-                        >Expected &beta;-HB after 24h fast (mmol/L)<sup>†††</sup></label
-                    >
-                    <input
-                        type="number"
-                        step="0.1"
-                        min="0.3"
-                        max="3.0"
-                        name="bhb-24h"
-                        id="bhb-24h"
-                        value="1.5"
-                    />
-                </section>
-                <em>
-                    <sup>†</sup> The Mediterranean diet is an observed diet
-                    associated with longer life expectancy. The
-                    <a
-                        href="https://aric.cscc.unc.edu/aric9/publications/published_manuscripts"
-                        target="_blank"
-                        >ARIC study</a
-                    >
-                    is a long-term study of cardiovascular health in the United
-                    States. The ARIC diet is a constructed diet based on
-                    observed effects of diet on cardiovascular health in the
-                    ARIC study.
-                </em>
-                <em>
-                    <sup>††</sup> Caloric restriction is believed to
-                    monotonically 
-                    <a
-                        href="https://pmc.ncbi.nlm.nih.gov/articles/PMC4836177/"
-                        target="_blank"
-                        >increase life expectancy</a
-                    > up to at least 40%
-                    DR in mice.
-                </em>
-                <em>
-                    <sup>†††</sup> Your plasma &beta;-hydroxybutyrate
-                    (&beta;-HB) level after a ~24h fast is a personal
-                    parameter that calibrates the ketogenesis rate in the
-                    fasting model. Population range is ~0.5&ndash;2.0 mmol/L
-                    (median ~1.0&ndash;1.5). It can be measured cheaply with a
-                    blood ketone meter or breath-acetone device. Leave at
-                    default if unknown.
-                </em>
-                <button>Calculate</button>
-            </form>
-            <section id="output"></section>
-            <hr>
-            <form id="meal-planner-form">
-                <section>
-                    <label for="breakfast-share">Breakfast</label>
-                    <section class="flex-row slider">
-                        <input type="range" name="breakfast-share" id="breakfast-share" min="0" max="100" value="25" />
-                        <output for="breakfast-share" class="slider-value">25%</output>
+                    <section>
+                        <label for="target-bmi">Target BMI</label>
+                        <input
+                            type="number"
+                            step="0.5"
+                            name="target-bmi"
+                            id="target-bmi"
+                            value="25"
+                        />
                     </section>
-                </section>
-                <section>
-                    <label for="breakfast-meal">Breakfast meal</label>
-                    <select name="breakfast-meal" id="breakfast-meal" data-meal-select></select>
-                </section>
-                <section>
-                    <label for="lunch-share">Lunch</label>
-                    <section class="flex-row slider">
-                        <input type="range" name="lunch-share" id="lunch-share" min="0" max="100" value="35" />
-                        <output for="lunch-share" class="slider-value">35%</output>
+                    <section>
+                        <label for="bhb-24h"
+                            >Expected &beta;-HB after 24h fast (mmol/L)<sup>&dagger;&dagger;&dagger;</sup></label
+                        >
+                        <input
+                            type="number"
+                            step="0.1"
+                            min="0.3"
+                            max="3.0"
+                            name="bhb-24h"
+                            id="bhb-24h"
+                            value="1.5"
+                        />
                     </section>
-                </section>
-                <section>
-                    <label for="lunch-meal">Lunch meal</label>
-                    <select name="lunch-meal" id="lunch-meal" data-meal-select></select>
-                </section>
-                <section>
-                    <label for="dinner-share">Dinner</label>
-                    <section class="flex-row slider">
-                        <input type="range" name="dinner-share" id="dinner-share" min="0" max="100" value="40" />
-                        <output for="dinner-share" class="slider-value">40%</output>
+                    <em>
+                        <sup>&dagger;</sup> The Mediterranean diet is an observed diet
+                        associated with longer life expectancy. The
+                        <a
+                            href="https://aric.cscc.unc.edu/aric9/publications/published_manuscripts"
+                            target="_blank"
+                            >ARIC study</a
+                        >
+                        is a long-term study of cardiovascular health in the United
+                        States. The ARIC diet is a constructed diet based on
+                        observed effects of diet on cardiovascular health in the
+                        ARIC study.
+                    </em>
+                    <em>
+                        <sup>&dagger;&dagger;</sup> Caloric restriction is believed to
+                        monotonically
+                        <a
+                            href="https://pmc.ncbi.nlm.nih.gov/articles/PMC4836177/"
+                            target="_blank"
+                            >increase life expectancy</a
+                        > up to at least 40%
+                        DR in mice.
+                    </em>
+                    <em>
+                        <sup>&dagger;&dagger;&dagger;</sup> Your plasma &beta;-hydroxybutyrate
+                        (&beta;-HB) level after a ~24h fast is a personal
+                        parameter that calibrates the ketogenesis rate in the
+                        fasting model. Population range is ~0.5&ndash;2.0 mmol/L
+                        (median ~1.0&ndash;1.5). It can be measured cheaply with a
+                        blood ketone meter or breath-acetone device. Leave at
+                        default if unknown.
+                    </em>
+
+                    <hr />
+
+                    <section>
+                        <label for="breakfast-share">Breakfast</label>
+                        <section class="flex-row slider">
+                            <input type="range" name="breakfast-share" id="breakfast-share" min="0" max="100" value="25" />
+                            <output for="breakfast-share" class="slider-value">25%</output>
+                        </section>
                     </section>
-                </section>
-                <section>
-                    <label for="dinner-meal">Dinner meal</label>
-                    <select name="dinner-meal" id="dinner-meal" data-meal-select></select>
-                </section>
-                <section>
-                    <label for="post-meal-walk">Post-meal walk (min)</label>
-                    <section class="flex-row slider">
-                        <input type="range" name="post-meal-walk" id="post-meal-walk" min="0" max="30" value="0" />
-                        <output for="post-meal-walk" class="slider-value">0 min</output>
+                    <section>
+                        <label for="breakfast-meal">Breakfast meal</label>
+                        <select name="breakfast-meal" id="breakfast-meal" data-meal-select data-default="Cheese Ham Sandwich"></select>
                     </section>
-                </section>
-                <em id="share-total"></em>
-                <button>Plan meals</button>
-            </form>
-            <section id="output-meals"></section>
+                    <section>
+                        <label for="lunch-share">Lunch</label>
+                        <section class="flex-row slider">
+                            <input type="range" name="lunch-share" id="lunch-share" min="0" max="100" value="35" />
+                            <output for="lunch-share" class="slider-value">35%</output>
+                        </section>
+                    </section>
+                    <section>
+                        <label for="lunch-meal">Lunch meal</label>
+                        <select name="lunch-meal" id="lunch-meal" data-meal-select data-default="Mixed Yoghurt"></select>
+                    </section>
+                    <section>
+                        <label for="dinner-share">Dinner</label>
+                        <section class="flex-row slider">
+                            <input type="range" name="dinner-share" id="dinner-share" min="0" max="100" value="40" />
+                            <output for="dinner-share" class="slider-value">40%</output>
+                        </section>
+                    </section>
+                    <section>
+                        <label for="dinner-meal">Dinner meal</label>
+                        <select name="dinner-meal" id="dinner-meal" data-meal-select data-default="Beef n Broccoli"></select>
+                    </section>
+                    <section>
+                        <label for="post-meal-walk">Post-meal walk (min)</label>
+                        <section class="flex-row slider">
+                            <input type="range" name="post-meal-walk" id="post-meal-walk" min="0" max="30" value="0" />
+                            <output for="post-meal-walk" class="slider-value">0 min</output>
+                        </section>
+                    </section>
+                    <em id="share-total"></em>
+                    <button>Calculate</button>
+                </form>
+                <div class="output-panel">
+                    <section id="output"></section>
+                    <section id="output-meals"></section>
+                </div>
+            </div>
         </main>
     </body>
     <script type="module" src="scripts/main.js"></script>

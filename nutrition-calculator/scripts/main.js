@@ -21,14 +21,9 @@ import {
 
 const FORM_ELEMENT = document.getElementById('nutrition-form');
 const OUTPUT_ELEMENT = document.getElementById('output');
-const MEAL_FORM_ELEMENT = document.getElementById('meal-planner-form');
 const MEAL_OUTPUT_ELEMENT = document.getElementById('output-meals');
 
 const btn = FORM_ELEMENT.querySelector('button');
-const mealBtn = MEAL_FORM_ELEMENT.querySelector('button');
-
-let lastColumns = null;
-let lastPersonal = null; // { weight, lbm, bhb24h }
 
 // Meal times (minutes from midnight) used for the blood-glucose model.
 const MEAL_TIMES = {
@@ -40,34 +35,41 @@ const MEAL_TIMES = {
 ready.then(() => populateMealSelects());
 
 function populateMealSelects() {
-    const selects = MEAL_FORM_ELEMENT.querySelectorAll('[data-meal-select]');
+    const selects = FORM_ELEMENT.querySelectorAll('[data-meal-select]');
     selects.forEach(sel => {
-        sel.innerHTML = meals.map((m, i) =>
-            `<option value="${m.name}"${i === 0 ? ' selected' : ''}>${m.name}</option>`
-        ).join('');
+        const preferred = sel.dataset.default;
+        sel.innerHTML = meals.map((m, i) => {
+            const isSelected = preferred
+                ? m.name === preferred
+                : i === 0;
+            return `<option value="${m.name}"${isSelected ? ' selected' : ''}>${m.name}</option>`;
+        }).join('');
     });
 }
 
 // Live-update slider value labels and share total.
-MEAL_FORM_ELEMENT.addEventListener('input', () => {
-    const sliders = MEAL_FORM_ELEMENT.querySelectorAll('input[type="range"]');
+FORM_ELEMENT.addEventListener('input', () => {
+    const shareIds = ['breakfast-share', 'lunch-share', 'dinner-share'];
     let total = 0;
-    sliders.forEach(slider => {
-        const out = MEAL_FORM_ELEMENT.querySelector(`output[for="${slider.id}"]`);
+    FORM_ELEMENT.querySelectorAll('input[type="range"]').forEach(slider => {
+        const out = FORM_ELEMENT.querySelector(`output[for="${slider.id}"]`);
         if (slider.id === 'post-meal-walk') {
             if (out) out.textContent = `${slider.value} min`;
             return;
         }
-        total += Number(slider.value);
+        if (shareIds.includes(slider.id)) total += Number(slider.value);
         if (out) out.textContent = `${slider.value}%`;
     });
-    const totalEl = MEAL_FORM_ELEMENT.querySelector('#share-total');
+    const totalEl = FORM_ELEMENT.querySelector('#share-total');
     if (totalEl) totalEl.textContent = `Total: ${total}% of daily calories`;
 });
 
 btn.addEventListener('click', (event) => {
     event.preventDefault();
 
+    // -------------------------------------------------------------------
+    // 1. BMR / TDEE / diet targets
+    // -------------------------------------------------------------------
     const age = Number(FORM_ELEMENT.querySelector('#age').value);
     const weight = Number(FORM_ELEMENT.querySelector('#weight').value);
     const height = Number(FORM_ELEMENT.querySelector('#height').value);
@@ -76,12 +78,12 @@ btn.addEventListener('click', (event) => {
     const fatPrc = Number(FORM_ELEMENT.querySelector('#fat-prc').value);
     const dietRatio = Number(FORM_ELEMENT.querySelector('#interpolate-diet').value) * 0.01;
     const caloricRestriction = Number(FORM_ELEMENT.querySelector('#caloric-restriction').value) * 0.01;
+    const bhb24h = Number(FORM_ELEMENT.querySelector('#bhb-24h').value) || 1.5;
 
     const interpolatedDiet = interpolateDiet(MEDITERRANEAN_DIET, ARIC_DIET, dietRatio);
 
     let bmr;
     let modelToUse;
-
     if (fatPrc) {
         modelToUse = 'Katch-McArdle';
         const leanBodyMass = weight * (1 - fatPrc / 100);
@@ -92,23 +94,29 @@ btn.addEventListener('click', (event) => {
     }
 
     const tdee = bmr * activity;
-    const caloryTarget = tdee * (1 - caloricRestriction);
+    const restrictedTdee = tdee * (1 - caloricRestriction);
 
-    // Personal parameters used by the fasting model.
+    // Adjust calories based on current-vs-target BMI. Rule of thumb:
+    // ~500 kcal/day deficit ≈ 0.45 kg/week weight change. 1 BMI unit for a
+    // typical adult ≈ 3 kg, so we scale by 500 kcal per BMI unit off target,
+    // capped at ±750 kcal/day to keep the change safe.
+    const targetBMI = Number(FORM_ELEMENT.querySelector('#target-bmi').value) || 25;
+    const heightM = height / 100;
+    const currentBMI = heightM > 0 ? weight / (heightM * heightM) : targetBMI;
+    const bmiDelta = targetBMI - currentBMI; // >0 = user wants to gain, <0 = lose
+    const bmiCalorieDelta = Math.max(-750, Math.min(750, bmiDelta * 500));
+
+    const caloryTarget = restrictedTdee + bmiCalorieDelta;
     const lbm = estimateLBM(weight, fatPrc, gender);
-    const bhb24h = Number(FORM_ELEMENT.querySelector('#bhb-24h').value) || 1.5;
-    lastPersonal = { weight, lbm, bhb24h };
 
-    const targetDietHealthy    = normalizeDietCalories(interpolatedDiet, caloryTarget);
-    const targetDietWeightLoss = normalizeDietCalories(interpolatedDiet, caloryTarget - 500);
-    const targetDietWeightGain = normalizeDietCalories(interpolatedDiet, caloryTarget + 500);
+    const targetDiet = normalizeDietCalories(interpolatedDiet, caloryTarget);
 
-    const columns = [
-        ['Weight Loss', targetDietWeightLoss],
-        ['Maintenance', targetDietHealthy],
-        ['Weight Gain', targetDietWeightGain],
-    ];
-    lastColumns = columns;
+    let goalLabel;
+    if (bmiCalorieDelta < -100) goalLabel = 'Weight Loss';
+    else if (bmiCalorieDelta > 100) goalLabel = 'Weight Gain';
+    else goalLabel = 'Maintenance';
+
+    const columns = [[goalLabel, targetDiet]];
 
     const rows = Object.keys(NUTRIENT_LABELS).map(key => {
         const [label, unit] = NUTRIENT_LABELS[key];
@@ -121,6 +129,9 @@ btn.addEventListener('click', (event) => {
             <div><strong>Model:</strong> ${modelToUse}</div>
             <div><strong>BMR:</strong> ${Math.round(bmr)} kcal/day</div>
             <div><strong>TDEE:</strong> ${Math.round(tdee)} kcal/day</div>
+            <div><strong>Current BMI:</strong> ${currentBMI.toFixed(1)}
+                (target ${targetBMI.toFixed(1)},
+                ${bmiCalorieDelta >= 0 ? '+' : ''}${Math.round(bmiCalorieDelta)} kcal/day)</div>
         </div>
         <table>
             <thead>
@@ -134,22 +145,16 @@ btn.addEventListener('click', (event) => {
             </tbody>
         </table>
     `;
-});
 
-mealBtn.addEventListener('click', (event) => {
-    event.preventDefault();
-
-    if (!lastColumns) {
-        MEAL_OUTPUT_ELEMENT.innerHTML = `<em>Please click "Calculate" first.</em>`;
-        return;
-    }
+    // -------------------------------------------------------------------
+    // 2. Meal planning + glucose + fasting
+    // -------------------------------------------------------------------
     if (!meals.length || !ingredients.length) {
         MEAL_OUTPUT_ELEMENT.innerHTML = `<em>Loading meal/ingredient data…</em>`;
         return;
     }
 
-    const maintenanceDiet = lastColumns.find(([name]) => name === 'Maintenance')[1];
-    const dailyCalories = maintenanceDiet.calories;
+    const dailyCalories = targetDiet.calories;
 
     const slots = [
         { label: 'Breakfast', shareId: 'breakfast-share', mealId: 'breakfast-meal' },
@@ -159,8 +164,8 @@ mealBtn.addEventListener('click', (event) => {
 
     const dailyIngredientGrams = {};
     const plannedMeals = slots.map(slot => {
-        const share = Number(MEAL_FORM_ELEMENT.querySelector('#' + slot.shareId).value) * 0.01;
-        const mealName = MEAL_FORM_ELEMENT.querySelector('#' + slot.mealId).value;
+        const share = Number(FORM_ELEMENT.querySelector('#' + slot.shareId).value) * 0.01;
+        const mealName = FORM_ELEMENT.querySelector('#' + slot.mealId).value;
         const meal = findMeal(mealName);
         const mealTime = MEAL_TIMES[slot.label];
         if (!meal || share <= 0) {
@@ -260,8 +265,7 @@ mealBtn.addEventListener('click', (event) => {
         <em id="longevity-explanation"></em>
     `;
 
-    const walkMinutes = Number(MEAL_FORM_ELEMENT.querySelector('#post-meal-walk').value) || 0;
-    const { weight, lbm, bhb24h } = lastPersonal;
+    const walkMinutes = Number(FORM_ELEMENT.querySelector('#post-meal-walk').value) || 0;
     drawGlucoseChart(document.getElementById('glucose-chart'), plannedMeals, walkMinutes, weight);
 
     const kMax = bhbTargetToKmax(bhb24h);
