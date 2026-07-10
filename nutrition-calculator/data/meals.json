@@ -77,5 +77,54 @@
                 "amount": 300
             }
         ]
+    },
+    {
+        "name": "Super Veggie",
+        "makes": {
+            "amount": 1,
+            "unit": "bowl"
+        },
+        "ingredients": [
+            {
+                "name": "Cauliflower",
+                "amount": 150
+            },
+            {
+                "name": "Broccoli",
+                "amount": 250
+            },
+            {
+                "name": "Shiitake",
+                "amount": 50
+            },
+            {
+                "name": "Garlic",
+                "amount": 3
+            },
+            {
+                "name": "Ginger",
+                "amount": 3
+            },
+            {
+                "name": "Cooked Black Lentils",
+                "amount": 150
+            },
+            {
+                "name": "Cumin",
+                "amount": 6
+            },
+            {
+                "name": "Pumpkin Seeds",
+                "amount": 10
+            },
+            {
+                "name": "Apple Cider Vinegar",
+                "amount": 15
+            },
+            {
+                "name": "Extra Virgin Olive Oil",
+                "amount": 13
+            }
+        ]
     }
 ]
