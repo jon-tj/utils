@@ -67,6 +67,14 @@ export function normalizeDietCalories(diet, targetCalories = 2000) {
     return diet;
 }
 
+// Estimate lean body mass (kg). Uses body fat % if provided, otherwise a
+// gender-based average body fat fraction (~28% female, 20% male).
+export function estimateLBM(weight, fatPrc, gender) {
+    if (fatPrc && fatPrc > 0) return weight * (1 - fatPrc / 100);
+    const defaultBf = gender === 'female' ? 0.28 : 0.20;
+    return weight * (1 - defaultBf);
+}
+
 // Compute total nutrients (per full recipe) for a meal by summing ingredients.
 export function computeMealNutrients(meal) {
     const totals = {

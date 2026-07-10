@@ -9,8 +9,15 @@ import {
     interpolateDiet,
     normalizeDietCalories,
     computeMealNutrients,
+    estimateLBM,
 } from './nutrition.js';
-import { drawGlucoseChart } from './chart.js';
+import { drawGlucoseChart, drawKetoneChart } from './chart.js';
+import {
+    simulateFastingDay,
+    estimateLongevityGainPercent,
+    bhbTargetToKmax,
+    FASTING,
+} from './fasting.js';
 
 const FORM_ELEMENT = document.getElementById('nutrition-form');
 const OUTPUT_ELEMENT = document.getElementById('output');
@@ -21,6 +28,7 @@ const btn = FORM_ELEMENT.querySelector('button');
 const mealBtn = MEAL_FORM_ELEMENT.querySelector('button');
 
 let lastColumns = null;
+let lastPersonal = null; // { weight, lbm, bhb24h }
 
 // Meal times (minutes from midnight) used for the blood-glucose model.
 const MEAL_TIMES = {
@@ -45,8 +53,12 @@ MEAL_FORM_ELEMENT.addEventListener('input', () => {
     const sliders = MEAL_FORM_ELEMENT.querySelectorAll('input[type="range"]');
     let total = 0;
     sliders.forEach(slider => {
-        total += Number(slider.value);
         const out = MEAL_FORM_ELEMENT.querySelector(`output[for="${slider.id}"]`);
+        if (slider.id === 'post-meal-walk') {
+            if (out) out.textContent = `${slider.value} min`;
+            return;
+        }
+        total += Number(slider.value);
         if (out) out.textContent = `${slider.value}%`;
     });
     const totalEl = MEAL_FORM_ELEMENT.querySelector('#share-total');
@@ -81,6 +93,11 @@ btn.addEventListener('click', (event) => {
 
     const tdee = bmr * activity;
     const caloryTarget = tdee * (1 - caloricRestriction);
+
+    // Personal parameters used by the fasting model.
+    const lbm = estimateLBM(weight, fatPrc, gender);
+    const bhb24h = Number(FORM_ELEMENT.querySelector('#bhb-24h').value) || 1.5;
+    lastPersonal = { weight, lbm, bhb24h };
 
     const targetDietHealthy    = normalizeDietCalories(interpolatedDiet, caloryTarget);
     const targetDietWeightLoss = normalizeDietCalories(interpolatedDiet, caloryTarget - 500);
@@ -237,7 +254,75 @@ mealBtn.addEventListener('click', (event) => {
         </table>
         <h4>Estimated blood glucose</h4>
         <canvas id="glucose-chart" width="720" height="260"></canvas>
+        <h4>Estimated plasma &beta;-hydroxybutyrate &amp; fasting benefit</h4>
+        <canvas id="ketone-chart" width="720" height="260"></canvas>
+        <div id="longevity-summary"></div>
+        <em id="longevity-explanation"></em>
     `;
 
-    drawGlucoseChart(document.getElementById('glucose-chart'), plannedMeals);
+    const walkMinutes = Number(MEAL_FORM_ELEMENT.querySelector('#post-meal-walk').value) || 0;
+    const { weight, lbm, bhb24h } = lastPersonal;
+    drawGlucoseChart(document.getElementById('glucose-chart'), plannedMeals, walkMinutes, weight);
+
+    const kMax = bhbTargetToKmax(bhb24h);
+    const sim = simulateFastingDay({ plannedMeals, walkMinutes, kMax, lbm, weight });
+    const gainPercent = estimateLongevityGainPercent(sim.benefitAucHours);
+
+    const mealMarkers = plannedMeals
+        .filter(pm => pm.meal && pm.scale > 0)
+        .map(pm => ({ label: pm.slot.label, time: pm.mealTime }));
+    drawKetoneChart(document.getElementById('ketone-chart'), sim, mealMarkers);
+
+    const rodentPerHour =
+        FASTING.RODENT_LIFESPAN_GAIN_PERCENT / FASTING.RODENT_DAILY_BENEFIT_HOURS;
+    const humanPerHour = rodentPerHour * FASTING.HUMAN_TRANSLATION_FACTOR;
+
+    document.getElementById('longevity-summary').innerHTML = `
+        <div class="summary">
+            <div><strong>Peak &beta;-HB:</strong> ${Math.max(...sim.B).toFixed(2)} mmol/L</div>
+            <div><strong>Daily benefit AUC:</strong> ${sim.benefitAucHours.toFixed(2)} h/day
+                <small>(hours-equivalent above the benefit threshold)</small></div>
+            <div><strong>Estimated lifespan gain:</strong> ${gainPercent.toFixed(2)}%
+                <small>(if sustained daily)</small></div>
+        </div>
+    `;
+
+    document.getElementById('longevity-explanation').innerHTML = `
+        The &beta;-HB curve is produced by a simple two-compartment model.
+        Meal carbohydrates enter the bloodstream via each ingredient's own
+        gamma-shaped impulse (per-ingredient GI &rarr; peak time; the
+        co-ingested fat and fiber in the same meal reduce peak amplitude
+        and delay it; a post-meal walk uniformly reduces amplitude via
+        muscle GLUT4 uptake). A fraction &eta; = ${FASTING.ETA_BASE.toFixed(2)}
+        of absorbed carbs replenishes liver glycogen (saturating at
+        G<sub>max</sub> = ${sim.G_max.toFixed(0)} g, computed as
+        ${FASTING.G_MAX_PER_KG_LBM} g/kg lean body mass); a walk reduces
+        that fraction proportionally. The liver drains glycogen at ~2
+        mg/kg/min at rest and ${FASTING.K_OUT_WALK_MULT}&times; faster
+        during a walk. Once glycogen falls below ~${FASTING.G_THR} g the
+        ketogenesis gate opens (soft sigmoid) and &beta;-HB rises toward a
+        steady state of K<sub>max</sub>/K<sub>clr</sub> =
+        ${bhb24h.toFixed(1)} mmol/L (your input). A benefit-rate sigmoid
+        centred at ${FASTING.B_50} mmol/L converts &beta;-HB into a 0&ndash;1
+        “beneficial state” indicator; its daily integral is the AUC
+        above.
+        <br><br>
+        <strong>Longevity translation.</strong> Rodent time-restricted
+        feeding studies
+        (<a href="https://pubmed.ncbi.nlm.nih.gov/31465934/" target="_blank">Mitchell 2019</a>,
+        <a href="https://pubmed.ncbi.nlm.nih.gov/35476621/" target="_blank">Acosta-Rodríguez 2022</a>)
+        report roughly ${FASTING.RODENT_LIFESPAN_GAIN_PERCENT}% median
+        lifespan extension in mice whose daily fasted window plausibly
+        yields ~${FASTING.RODENT_DAILY_BENEFIT_HOURS} h/day in an elevated
+        &beta;-HB state. This gives a rodent slope of
+        ${rodentPerHour.toFixed(2)}% lifespan per hour of daily benefit
+        AUC. We halve this (factor
+        ${FASTING.HUMAN_TRANSLATION_FACTOR}) as a conservative rodent&rarr;human
+        translation, giving ${humanPerHour.toFixed(2)}% per h/day. Your
+        result: ${sim.benefitAucHours.toFixed(2)} h/day &times;
+        ${humanPerHour.toFixed(2)}%/h = <strong>${gainPercent.toFixed(2)}%</strong>.
+        This is an order-of-magnitude estimate, not a personal prediction:
+        there is no direct human-lifespan RCT of intermittent fasting, and
+        individual variation in &beta;-HB kinetics is large.
+    `;
 });

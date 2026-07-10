@@ -70,6 +70,20 @@
                         value="15"
                     />
                 </section>
+                <section>
+                    <label for="bhb-24h"
+                        >Expected &beta;-HB after 24h fast (mmol/L)<sup>†††</sup></label
+                    >
+                    <input
+                        type="number"
+                        step="0.1"
+                        min="0.3"
+                        max="3.0"
+                        name="bhb-24h"
+                        id="bhb-24h"
+                        value="1.5"
+                    />
+                </section>
                 <em>
                     <sup>†</sup> The Mediterranean diet is an observed diet
                     associated with longer life expectancy. The
@@ -92,6 +106,15 @@
                         >increase life expectancy</a
                     > up to at least 40%
                     DR in mice.
+                </em>
+                <em>
+                    <sup>†††</sup> Your plasma &beta;-hydroxybutyrate
+                    (&beta;-HB) level after a ~24h fast is a personal
+                    parameter that calibrates the ketogenesis rate in the
+                    fasting model. Population range is ~0.5&ndash;2.0 mmol/L
+                    (median ~1.0&ndash;1.5). It can be measured cheaply with a
+                    blood ketone meter or breath-acetone device. Leave at
+                    default if unknown.
                 </em>
                 <button>Calculate</button>
             </form>
@@ -130,6 +153,13 @@
                 <section>
                     <label for="dinner-meal">Dinner meal</label>
                     <select name="dinner-meal" id="dinner-meal" data-meal-select></select>
+                </section>
+                <section>
+                    <label for="post-meal-walk">Post-meal walk (min)</label>
+                    <section class="flex-row slider">
+                        <input type="range" name="post-meal-walk" id="post-meal-walk" min="0" max="30" value="0" />
+                        <output for="post-meal-walk" class="slider-value">0 min</output>
+                    </section>
                 </section>
                 <em id="share-total"></em>
                 <button>Plan meals</button>
