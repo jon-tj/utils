@@ -200,12 +200,19 @@ function readShareRatios() {
 FORM_ELEMENT.addEventListener('input', () => {
     const shares = readShareRatios();
     for (const id of SHARE_SLIDER_IDS) {
+        const slider = FORM_ELEMENT.querySelector('#' + id);
         const out = FORM_ELEMENT.querySelector(`output[for="${id}"]`);
         if (out) out.textContent = `${Math.round(shares[id] * 100)}%`;
+        const mealId = id.replace('-share', '-meal');
+        const mealSelect = FORM_ELEMENT.querySelector('#' + mealId);
+        if (mealSelect) mealSelect.disabled = Number(slider.value) === 0;
     }
 });
 
-ready.then(() => populateMealSelects());
+ready.then(() => {
+    populateMealSelects();
+    FORM_ELEMENT.dispatchEvent(new Event('input'));
+});
 
 // -----------------------------------------------------------------------------
 // Main click handler
