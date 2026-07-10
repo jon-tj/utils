@@ -200,7 +200,8 @@ function setIngredientsTable(dailyIngredientGrams) {
     tbody.replaceChildren();
     let totalPricePerDay = 0;
     let anyPriced = false;
-    for (const name of Object.keys(dailyIngredientGrams).sort()) {
+    const sortedNames = Object.keys(dailyIngredientGrams).sort();
+    sortedNames.forEach((name, i) => {
         const grams = dailyIngredientGrams[name];
         const ing = ingredients.find(i => i.name === name);
         let freq = '—';
@@ -218,14 +219,16 @@ function setIngredientsTable(dailyIngredientGrams) {
             }
         }
         const tr = document.createElement('tr');
+        if (i % 2 === 1) tr.classList.add('even');
         appendCell(tr).textContent = name;
         appendCell(tr).textContent = `${Math.round(grams)} g/day`;
         appendCell(tr).textContent = freq;
         appendCell(tr).textContent = price;
         tbody.appendChild(tr);
-    }
+    });
 
     const totalRow = document.createElement('tr');
+    if (sortedNames.length % 2 === 1) totalRow.classList.add('even');
     const labelCell = appendCell(totalRow);
     const labelStrong = document.createElement('strong');
     labelStrong.textContent = 'Subtotal';

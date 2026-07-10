@@ -1,0 +1,58 @@
+:root {
+    --color-primary: #2a4229;
+    --color-primary-hover: #3a5a39;
+    --color-text-inversed: #ececec;
+    --color-text-muted: #444;
+    
+    --color-card-background: #f5f5f5;
+    --color-note-background: #fff8e3;
+
+    --color-table-background: #f9f9f9;
+    --color-table-border: #ddd;
+    --color-table-gradient-1: #4a90c8;
+    --color-table-gradient-2: #cfe2f3;
+    --color-table-gradient-3: #f4cccc;
+    --color-table-gradient-4: #cc4c4c;
+}
+
+body {
+    margin: 2rem;
+}
+
+select,
+table,
+body,
+input,
+button {
+    font-family: sans-serif;
+    font-size: 1rem;
+    border-radius: 0.4rem;
+}
+
+button.primary {
+    background-color: var(--color-primary);
+    color: var(--color-text-inversed);
+    border: none;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+button.primary:hover {
+    background-color: var(--color-primary-hover);
+}
+
+button.transparent {
+    background-color: transparent;
+    color: var(--color-primary);
+    border: 1px solid var(--color-primary);
+}
+
+button.transparent:hover {
+    background-color: var(--color-primary);
+    color: var(--color-text-inversed);
+}
+
+main {
+    width: min(100%, 1400px);
+    margin: auto;
+}
