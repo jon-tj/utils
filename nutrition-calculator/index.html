@@ -210,26 +210,6 @@
                                 data-default="Beef n Broccoli"
                             ></select>
                         </section>
-                        <section>
-                            <label for="post-meal-walk"
-                                >Post-meal walk (min)</label
-                            >
-                            <section class="flex-row slider">
-                                <input
-                                    type="range"
-                                    name="post-meal-walk"
-                                    id="post-meal-walk"
-                                    min="0"
-                                    max="30"
-                                    value="0"
-                                />
-                                <output
-                                    for="post-meal-walk"
-                                    class="slider-value"
-                                    >0 min</output
-                                >
-                            </section>
-                        </section>
                         <button>Calculate</button>
                     </form>
                     <div class="card">
@@ -256,16 +236,6 @@
                                 >increase life expectancy</a
                             >
                             up to at least 40% DR in mice.
-                        </em>
-                        <em>
-                            <sup>&dagger;&dagger;&dagger;</sup> Your plasma
-                            &beta;-hydroxybutyrate (&beta;-HB) level after a
-                            ~24h fast is a personal parameter that calibrates
-                            the ketogenesis rate in the fasting model.
-                            Population range is ~0.5&ndash;2.0 mmol/L (median
-                            ~1.0&ndash;1.5). It can be measured cheaply with a
-                            blood ketone meter or breath-acetone device. Leave
-                            at default if unknown.
                         </em>
                     </div>
                 </aside>
@@ -384,109 +354,6 @@
                         </thead>
                         <tbody></tbody>
                     </table></section>
-                    <section>
-                    <h4>Estimated blood glucose</h4>
-                    <canvas
-                        id="glucose-chart"
-                        width="720"
-                        height="260"
-                    ></canvas></section>
-                    <section>
-                    <h4>
-                        Estimated plasma &beta;-hydroxybutyrate &amp; fasting
-                        benefit
-                    </h4>
-                    <canvas id="ketone-chart" width="720" height="260"></canvas>
-                    </section>
-                    <div class="card">
-                        <div>
-                            <strong>Peak &beta;-HB:</strong>
-                            <span data-slot="peak-bhb">&mdash;</span>
-                        </div>
-                        <div>
-                            <strong>Daily benefit AUC:</strong>
-                            <span data-slot="benefit-auc">&mdash;</span>
-                            <small
-                                >(hours-equivalent above the benefit
-                                threshold)</small
-                            >
-                        </div>
-                        <div>
-                            <strong>Estimated lifespan gain:</strong>
-                            <span data-slot="lifespan-gain">&mdash;</span>
-                            <small>(if sustained daily)</small>
-                        </div>
-                    </div>
-                    <div class="card">
-                        <em class="explanation">
-                            The &beta;-HB curve is produced by a simple
-                            two-compartment model. Meal carbohydrates enter the
-                            bloodstream via each ingredient's own gamma-shaped
-                            impulse (per-ingredient GI &rarr; peak time; the
-                            co-ingested fat and fiber stretch the impulse; a
-                            post-meal walk elevates plasma glucose clearance via
-                            contraction-stimulated muscle GLUT4 uptake). A
-                            fraction &eta; =
-                            <span data-slot="eta">&mdash;</span> of absorbed
-                            carbs replenishes liver glycogen (saturating at
-                            G<sub>max</sub> =
-                            <span data-slot="g-max">&mdash;</span>, computed as
-                            <span data-slot="g-per-lbm">&mdash;</span> g/kg lean
-                            body mass); a walk reduces that fraction during the
-                            walk window. The liver drains glycogen at ~2
-                            mg/kg/min at rest and
-                            <span data-slot="walk-out-mult">&mdash;</span
-                            >&times; faster during a walk. Once glycogen falls
-                            below ~<span data-slot="g-thr">&mdash;</span> g the
-                            ketogenesis gate opens (soft sigmoid) and &beta;-HB
-                            rises toward a steady state of K<sub>max</sub>/K<sub
-                                >clr</sub
-                            >
-                            = <span data-slot="bhb-ss">&mdash;</span> mmol/L
-                            (your input). A benefit-rate sigmoid centred at
-                            <span data-slot="b-50">&mdash;</span> mmol/L
-                            converts &beta;-HB into a 0&ndash;1
-                            &ldquo;beneficial state&rdquo; indicator; its daily
-                            integral is the AUC above. <br /><br />
-                            <strong>Longevity translation.</strong> Rodent
-                            time-restricted feeding studies (<a
-                                href="https://pubmed.ncbi.nlm.nih.gov/31465934/"
-                                target="_blank"
-                                >Mitchell 2019</a
-                            >,
-                            <a
-                                href="https://pubmed.ncbi.nlm.nih.gov/35476621/"
-                                target="_blank"
-                                >Acosta-Rodr&iacute;guez 2022</a
-                            >) report roughly
-                            <span data-slot="rodent-gain">&mdash;</span>% median
-                            lifespan extension in mice whose daily fasted window
-                            plausibly yields ~<span data-slot="rodent-hours"
-                                >&mdash;</span
-                            >
-                            h/day in an elevated &beta;-HB state. This gives a
-                            rodent slope of
-                            <span data-slot="rodent-per-hour">&mdash;</span>%
-                            lifespan per hour of daily benefit AUC. We halve
-                            this (factor
-                            <span data-slot="human-factor">&mdash;</span>) as a
-                            conservative rodent&rarr;human translation, giving
-                            <span data-slot="human-per-hour">&mdash;</span>% per
-                            h/day. Your result:
-                            <span data-slot="human-per-hour">&mdash;</span>%/h
-                            &times;
-                            <span data-slot="benefit-auc">&mdash;</span>
-                            h/day =
-                            <strong
-                                ><span data-slot="lifespan-gain"
-                                    >&mdash;</span
-                                ></strong
-                            >. This is an order-of-magnitude estimate, not a
-                            personal prediction: there is no direct
-                            human-lifespan RCT of intermittent fasting, and
-                            individual variation in &beta;-HB kinetics is large.
-                        </em>
-                    </div>
                 </aside>
             </div>
         </main>

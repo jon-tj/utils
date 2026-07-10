@@ -15,23 +15,9 @@ import {
     computeMealNutrients,
     estimateLBM,
 } from './nutrition.js';
-import { drawGlucoseChart, drawKetoneChart } from './chart.js';
-import {
-    simulateFastingDay,
-    estimateLongevityGainPercent,
-    bhbTargetToKmax,
-    FASTING,
-} from './fasting.js';
 
 const FORM_ELEMENT = document.getElementById('nutrition-form');
 const btn = FORM_ELEMENT.querySelector('button');
-
-// Meal times (minutes from midnight) used for the blood-glucose model.
-const MEAL_TIMES = {
-    Breakfast: 7 * 60,
-    Lunch: 12 * 60,
-    Dinner: 19 * 60,
-};
 
 // -----------------------------------------------------------------------------
 // DOM helpers
@@ -189,11 +175,6 @@ function readShareRatios() {
 }
 
 FORM_ELEMENT.addEventListener('input', () => {
-    const walkSlider = FORM_ELEMENT.querySelector('#post-meal-walk');
-    if (walkSlider) {
-        const out = FORM_ELEMENT.querySelector(`output[for="${walkSlider.id}"]`);
-        if (out) out.textContent = `${walkSlider.value} min`;
-    }
     const shares = readShareRatios();
     for (const id of SHARE_SLIDER_IDS) {
         const out = FORM_ELEMENT.querySelector(`output[for="${id}"]`);
@@ -219,7 +200,6 @@ btn.addEventListener('click', (event) => {
     const fatPrc = Number(FORM_ELEMENT.querySelector('#fat-prc').value);
     const dietRatio = Number(FORM_ELEMENT.querySelector('#interpolate-diet').value) * 0.01;
     const caloricRestriction = Number(FORM_ELEMENT.querySelector('#caloric-restriction').value) * 0.01;
-    const bhb24h = Number(FORM_ELEMENT.querySelector('#bhb-24h').value) || 1.5;
     const targetBMI = Number(FORM_ELEMENT.querySelector('#target-bmi').value) || 25;
 
     const interpolatedDiet = interpolateDiet(MEDITERRANEAN_DIET, ARIC_DIET, dietRatio);
@@ -282,9 +262,8 @@ btn.addEventListener('click', (event) => {
         const share = shares[slot.shareId];
         const mealName = FORM_ELEMENT.querySelector('#' + slot.mealId).value;
         const meal = findMeal(mealName);
-        const mealTime = MEAL_TIMES[slot.label];
         if (!meal || share <= 0) {
-            return { slot, meal, share, scale: 0, mealTime, nutrients: null, scaledIngredients: [] };
+            return { slot, meal, share, scale: 0, nutrients: null, scaledIngredients: [] };
         }
 
         const baseNutrients = computeMealNutrients(meal);
@@ -300,45 +279,9 @@ btn.addEventListener('click', (event) => {
             return { name: item.name, grams };
         });
 
-        return { slot, meal, share, scale, mealTime, nutrients, scaledIngredients };
+        return { slot, meal, share, scale, nutrients, scaledIngredients };
     });
 
     setMealsTable(plannedMeals);
     setIngredientsTable(dailyIngredientGrams);
-
-    // ---- 3. Charts + fasting sim ------------------------------------------
-    const walkMinutes = Number(FORM_ELEMENT.querySelector('#post-meal-walk').value) || 0;
-    drawGlucoseChart(document.getElementById('glucose-chart'), plannedMeals, walkMinutes, weight);
-
-    const kMax = bhbTargetToKmax(bhb24h);
-    const sim = simulateFastingDay({ plannedMeals, walkMinutes, kMax, lbm, weight });
-    const gainPercent = estimateLongevityGainPercent(sim.benefitAucHours);
-
-    const mealMarkers = plannedMeals
-        .filter(pm => pm.meal && pm.scale > 0)
-        .map(pm => ({ label: pm.slot.label, time: pm.mealTime }));
-    drawKetoneChart(document.getElementById('ketone-chart'), sim, mealMarkers);
-
-    // ---- 4. Longevity summary + explanation slots -------------------------
-    const rodentPerHour =
-        FASTING.RODENT_LIFESPAN_GAIN_PERCENT / FASTING.RODENT_DAILY_BENEFIT_HOURS;
-    const humanPerHour = rodentPerHour * FASTING.HUMAN_TRANSLATION_FACTOR;
-
-    setSlot('peak-bhb', `${Math.max(...sim.B).toFixed(2)} mmol/L`);
-    setSlot('benefit-auc', `${sim.benefitAucHours.toFixed(2)} h/day`);
-    setSlot('lifespan-gain', `${gainPercent.toFixed(2)}%`);
-
-    setSlot('eta', FASTING.ETA_BASE.toFixed(2));
-    setSlot('g-max', `${sim.G_max.toFixed(0)} g`);
-    setSlot('g-per-lbm', FASTING.G_MAX_PER_KG_LBM.toFixed(1));
-    setSlot('walk-out-mult', FASTING.K_OUT_WALK_MULT.toFixed(1));
-    setSlot('g-thr', FASTING.G_THR.toString());
-    setSlot('bhb-ss', bhb24h.toFixed(1));
-    setSlot('b-50', FASTING.B_50.toString());
-
-    setSlot('rodent-gain', FASTING.RODENT_LIFESPAN_GAIN_PERCENT.toString());
-    setSlot('rodent-hours', FASTING.RODENT_DAILY_BENEFIT_HOURS.toString());
-    setSlot('rodent-per-hour', rodentPerHour.toFixed(2));
-    setSlot('human-factor', FASTING.HUMAN_TRANSLATION_FACTOR.toString());
-    setSlot('human-per-hour', humanPerHour.toFixed(2));
 });
