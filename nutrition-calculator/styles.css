@@ -191,17 +191,17 @@ footer {
     border-radius: 2px;
 }
 .swatch.tone-low-2 {
-    background-color: #4a90c8;
+    background-color: var(--color-table-gradient-1);
 }
 .swatch.tone-low-1 {
-    background-color: #cfe2f3;
+    background-color: var(--color-table-gradient-2);
 }
 .swatch.tone-none {
-    background-color: #f9f9f9;
+    background-color: var(--color-table-background);
 }
 .swatch.tone-high-1 {
-    background-color: #f4cccc;
+    background-color: var(--color-table-gradient-3);
 }
 .swatch.tone-high-2 {
-    background-color: #cc4c4c;
+    background-color: var(--color-table-gradient-4);
 }
