@@ -10,173 +10,484 @@
         <main>
             <h3>Nutrition Calculator</h3>
             <div class="layout">
-                <form id="nutrition-form">
-                    <section>
-                        <label for="age">Age</label>
-                        <input type="number" name="age" id="age" value="24" required />
-                    </section>
-                    <section>
-                        <label for="gender">Gender</label>
-                        <select name="gender" id="gender" required>
-                            <option value="">Select</option>
-                            <option value="male" selected>Male</option>
-                            <option value="female">Female</option>
-                        </select>
-                    </section>
-                    <section>
-                        <label for="height">Height (cm)</label>
-                        <input type="number" name="height" id="height" value="183" required />
-                    </section>
-                    <section>
-                        <label for="weight">Weight (kg)</label>
-                        <input type="number" name="weight" id="weight" value="72" required />
-                    </section>
-                    <section>
-                        <label for="activity">Activity</label>
-                        <select name="activity" id="activity" required>
-                            <option value="">Select</option>
-                            <option value="sedentary">Sedentary</option>
-                            <option value="light" selected>Lightly Active</option>
-                            <option value="moderate">Moderately Active</option>
-                            <option value="active">Active</option>
-                        </select>
-                    </section>
-                    <section>
-                        <label for="fat-prc">Body fat (%)</label>
-                        <input type="number" name="fat-prc" id="fat-prc" value="13" placeholder="Optional"/>
-                    </section>
-                    <section>
-                        <label for="slider-diet">Diet<sup>&dagger;</sup></label>
-                        <section class="flex-row slider">
-                            <label>Mediterranean</label>
+                <aside>
+                    <form id="nutrition-form" class="card">
+                        <section>
+                            <label for="age">Age</label>
                             <input
-                                type="range"
-                                name="interpolate-diet"
-                                id="interpolate-diet"
-                                min="0"
-                                max="100"
-                                value="50"
+                                type="number"
+                                name="age"
+                                id="age"
+                                value="24"
+                                required
                             />
-                            <label>ARIC</label>
                         </section>
-                    </section>
-                    <section>
-                        <label for="caloric-restriction"
-                            >Caloric restriction (%)<sup>&dagger;&dagger;</sup></label
-                        >
-                        <input
-                            type="number"
-                            name="caloric-restriction"
-                            id="caloric-restriction"
-                            value="15"
-                        />
-                    </section>
-                    <section>
-                        <label for="target-bmi">Target BMI</label>
-                        <input
-                            type="number"
-                            step="0.5"
-                            name="target-bmi"
-                            id="target-bmi"
-                            value="25"
-                        />
-                    </section>
-                    <section>
-                        <label for="bhb-24h"
-                            >Expected &beta;-HB after 24h fast (mmol/L)<sup>&dagger;&dagger;&dagger;</sup></label
-                        >
-                        <input
-                            type="number"
-                            step="0.1"
-                            min="0.3"
-                            max="3.0"
-                            name="bhb-24h"
-                            id="bhb-24h"
-                            value="1.5"
-                        />
-                    </section>
-                    <em>
-                        <sup>&dagger;</sup> The Mediterranean diet is an observed diet
-                        associated with longer life expectancy. The
-                        <a
-                            href="https://aric.cscc.unc.edu/aric9/publications/published_manuscripts"
-                            target="_blank"
-                            >ARIC study</a
-                        >
-                        is a long-term study of cardiovascular health in the United
-                        States. The ARIC diet is a constructed diet based on
-                        observed effects of diet on cardiovascular health in the
-                        ARIC study.
-                    </em>
-                    <em>
-                        <sup>&dagger;&dagger;</sup> Caloric restriction is believed to
-                        monotonically
-                        <a
-                            href="https://pmc.ncbi.nlm.nih.gov/articles/PMC4836177/"
-                            target="_blank"
-                            >increase life expectancy</a
-                        > up to at least 40%
-                        DR in mice.
-                    </em>
-                    <em>
-                        <sup>&dagger;&dagger;&dagger;</sup> Your plasma &beta;-hydroxybutyrate
-                        (&beta;-HB) level after a ~24h fast is a personal
-                        parameter that calibrates the ketogenesis rate in the
-                        fasting model. Population range is ~0.5&ndash;2.0 mmol/L
-                        (median ~1.0&ndash;1.5). It can be measured cheaply with a
-                        blood ketone meter or breath-acetone device. Leave at
-                        default if unknown.
-                    </em>
+                        <section>
+                            <label for="gender">Gender</label>
+                            <select name="gender" id="gender" required>
+                                <option value="">Select</option>
+                                <option value="male" selected>Male</option>
+                                <option value="female">Female</option>
+                            </select>
+                        </section>
+                        <section>
+                            <label for="height">Height (cm)</label>
+                            <input
+                                type="number"
+                                name="height"
+                                id="height"
+                                value="183"
+                                required
+                            />
+                        </section>
+                        <section>
+                            <label for="weight">Weight (kg)</label>
+                            <input
+                                type="number"
+                                name="weight"
+                                id="weight"
+                                value="72"
+                                required
+                            />
+                        </section>
+                        <section>
+                            <label for="activity">Activity</label>
+                            <select name="activity" id="activity" required>
+                                <option value="">Select</option>
+                                <option value="sedentary">Sedentary</option>
+                                <option value="light" selected>
+                                    Lightly Active
+                                </option>
+                                <option value="moderate">
+                                    Moderately Active
+                                </option>
+                                <option value="active">Active</option>
+                            </select>
+                        </section>
+                        <section>
+                            <label for="fat-prc">Body fat (%)</label>
+                            <input
+                                type="number"
+                                name="fat-prc"
+                                id="fat-prc"
+                                value="13"
+                                placeholder="Optional"
+                            />
+                        </section>
+                        <section>
+                            <label for="slider-diet"
+                                >Diet<sup>&dagger;</sup></label
+                            >
+                            <section class="flex-row slider">
+                                <label>Mediterranean</label>
+                                <input
+                                    type="range"
+                                    name="interpolate-diet"
+                                    id="interpolate-diet"
+                                    min="0"
+                                    max="100"
+                                    value="50"
+                                />
+                                <label>ARIC</label>
+                            </section>
+                        </section>
+                        <section>
+                            <label for="caloric-restriction"
+                                >Caloric restriction (%)<sup
+                                    >&dagger;&dagger;</sup
+                                ></label
+                            >
+                            <input
+                                type="number"
+                                name="caloric-restriction"
+                                id="caloric-restriction"
+                                value="15"
+                            />
+                        </section>
+                        <section>
+                            <label for="target-bmi">Target BMI</label>
+                            <input
+                                type="number"
+                                step="0.5"
+                                name="target-bmi"
+                                id="target-bmi"
+                                value="25"
+                            />
+                        </section>
+                        <section>
+                            <label for="bhb-24h"
+                                >Expected &beta;-HB after 24h fast (mmol/L)<sup
+                                    >&dagger;&dagger;&dagger;</sup
+                                ></label
+                            >
+                            <input
+                                type="number"
+                                step="0.1"
+                                min="0.3"
+                                max="3.0"
+                                name="bhb-24h"
+                                id="bhb-24h"
+                                value="1.5"
+                            />
+                        </section>
 
-                    <hr />
+                        <hr />
 
-                    <section>
-                        <label for="breakfast-share">Breakfast</label>
-                        <section class="flex-row slider">
-                            <input type="range" name="breakfast-share" id="breakfast-share" min="0" max="100" value="25" />
-                            <output for="breakfast-share" class="slider-value">25%</output>
+                        <section>
+                            <label for="breakfast-share">Breakfast</label>
+                            <section class="flex-row slider">
+                                <input
+                                    type="range"
+                                    name="breakfast-share"
+                                    id="breakfast-share"
+                                    min="0"
+                                    max="100"
+                                    value="25"
+                                />
+                                <output
+                                    for="breakfast-share"
+                                    class="slider-value"
+                                    >25%</output
+                                >
+                            </section>
                         </section>
-                    </section>
-                    <section>
-                        <label for="breakfast-meal">Breakfast meal</label>
-                        <select name="breakfast-meal" id="breakfast-meal" data-meal-select data-default="Cheese Ham Sandwich"></select>
-                    </section>
-                    <section>
-                        <label for="lunch-share">Lunch</label>
-                        <section class="flex-row slider">
-                            <input type="range" name="lunch-share" id="lunch-share" min="0" max="100" value="35" />
-                            <output for="lunch-share" class="slider-value">35%</output>
+                        <section>
+                            <label for="breakfast-meal">Breakfast meal</label>
+                            <select
+                                name="breakfast-meal"
+                                id="breakfast-meal"
+                                data-meal-select
+                                data-default="Cheese Ham Sandwich"
+                            ></select>
                         </section>
-                    </section>
-                    <section>
-                        <label for="lunch-meal">Lunch meal</label>
-                        <select name="lunch-meal" id="lunch-meal" data-meal-select data-default="Mixed Yoghurt"></select>
-                    </section>
-                    <section>
-                        <label for="dinner-share">Dinner</label>
-                        <section class="flex-row slider">
-                            <input type="range" name="dinner-share" id="dinner-share" min="0" max="100" value="40" />
-                            <output for="dinner-share" class="slider-value">40%</output>
+                        <section>
+                            <label for="lunch-share">Lunch</label>
+                            <section class="flex-row slider">
+                                <input
+                                    type="range"
+                                    name="lunch-share"
+                                    id="lunch-share"
+                                    min="0"
+                                    max="100"
+                                    value="35"
+                                />
+                                <output for="lunch-share" class="slider-value"
+                                    >35%</output
+                                >
+                            </section>
                         </section>
-                    </section>
-                    <section>
-                        <label for="dinner-meal">Dinner meal</label>
-                        <select name="dinner-meal" id="dinner-meal" data-meal-select data-default="Beef n Broccoli"></select>
-                    </section>
-                    <section>
-                        <label for="post-meal-walk">Post-meal walk (min)</label>
-                        <section class="flex-row slider">
-                            <input type="range" name="post-meal-walk" id="post-meal-walk" min="0" max="30" value="0" />
-                            <output for="post-meal-walk" class="slider-value">0 min</output>
+                        <section>
+                            <label for="lunch-meal">Lunch meal</label>
+                            <select
+                                name="lunch-meal"
+                                id="lunch-meal"
+                                data-meal-select
+                                data-default="Mixed Yoghurt"
+                            ></select>
                         </section>
+                        <section>
+                            <label for="dinner-share">Dinner</label>
+                            <section class="flex-row slider">
+                                <input
+                                    type="range"
+                                    name="dinner-share"
+                                    id="dinner-share"
+                                    min="0"
+                                    max="100"
+                                    value="40"
+                                />
+                                <output for="dinner-share" class="slider-value"
+                                    >40%</output
+                                >
+                            </section>
+                        </section>
+                        <section>
+                            <label for="dinner-meal">Dinner meal</label>
+                            <select
+                                name="dinner-meal"
+                                id="dinner-meal"
+                                data-meal-select
+                                data-default="Beef n Broccoli"
+                            ></select>
+                        </section>
+                        <section>
+                            <label for="post-meal-walk"
+                                >Post-meal walk (min)</label
+                            >
+                            <section class="flex-row slider">
+                                <input
+                                    type="range"
+                                    name="post-meal-walk"
+                                    id="post-meal-walk"
+                                    min="0"
+                                    max="30"
+                                    value="0"
+                                />
+                                <output
+                                    for="post-meal-walk"
+                                    class="slider-value"
+                                    >0 min</output
+                                >
+                            </section>
+                        </section>
+                        <button>Calculate</button>
+                    </form>
+                    <div class="card">
+                        <em>
+                            <sup>&dagger;</sup> The Mediterranean diet is an
+                            observed diet associated with longer life
+                            expectancy. The
+                            <a
+                                href="https://aric.cscc.unc.edu/aric9/publications/published_manuscripts"
+                                target="_blank"
+                                >ARIC study</a
+                            >
+                            is a long-term study of cardiovascular health in the
+                            United States. The ARIC diet is a constructed diet
+                            based on observed effects of diet on cardiovascular
+                            health in the ARIC study.
+                        </em>
+                        <em>
+                            <sup>&dagger;&dagger;</sup> Caloric restriction is
+                            believed to monotonically
+                            <a
+                                href="https://pmc.ncbi.nlm.nih.gov/articles/PMC4836177/"
+                                target="_blank"
+                                >increase life expectancy</a
+                            >
+                            up to at least 40% DR in mice.
+                        </em>
+                        <em>
+                            <sup>&dagger;&dagger;&dagger;</sup> Your plasma
+                            &beta;-hydroxybutyrate (&beta;-HB) level after a
+                            ~24h fast is a personal parameter that calibrates
+                            the ketogenesis rate in the fasting model.
+                            Population range is ~0.5&ndash;2.0 mmol/L (median
+                            ~1.0&ndash;1.5). It can be measured cheaply with a
+                            blood ketone meter or breath-acetone device. Leave
+                            at default if unknown.
+                        </em>
+                    </div>
+                </aside>
+                <aside>
+                    <div class="card">
+                        <div>
+                            <strong>Model:</strong>
+                            <span data-slot="model">&mdash;</span>
+                        </div>
+                        <div>
+                            <strong>BMR:</strong>
+                            <span data-slot="bmr">&mdash;</span>
+                        </div>
+                        <div>
+                            <strong>TDEE:</strong>
+                            <span data-slot="tdee">&mdash;</span>
+                        </div>
+                        <div>
+                            <strong>BMI:</strong>
+                            <span data-slot="bmi">&mdash;</span>
+                        </div>
+                    </div>
+                    <table id="diet-table">
+                        <thead>
+                            <tr>
+                                <th>Nutrient</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr data-nutrient="calories">
+                                <td>Calories</td>
+                            </tr>
+                            <tr data-nutrient="protein">
+                                <td>Protein</td>
+                            </tr>
+                            <tr data-nutrient="fatTotal">
+                                <td>Total Fat</td>
+                            </tr>
+                            <tr data-nutrient="SFA">
+                                <td>SFA</td>
+                            </tr>
+                            <tr data-nutrient="MUFA">
+                                <td>MUFA</td>
+                            </tr>
+                            <tr data-nutrient="PUFA">
+                                <td>PUFA</td>
+                            </tr>
+                            <tr data-nutrient="carbs">
+                                <td>Carbs</td>
+                            </tr>
+                            <tr data-nutrient="sugars">
+                                <td>Sugars</td>
+                            </tr>
+                            <tr data-nutrient="fiber">
+                                <td>Fiber</td>
+                            </tr>
+                            <tr data-nutrient="salt">
+                                <td>Salt</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <section>
+                    <h4>Per-meal breakdown</h4>
+                    <table id="meals-table">
+                        <thead>
+                            <tr>
+                                <th>Nutrient</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr data-row="servings">
+                                <td>Servings</td>
+                            </tr>
+                            <tr data-nutrient="calories">
+                                <td>Calories</td>
+                            </tr>
+                            <tr data-nutrient="protein">
+                                <td>Protein</td>
+                            </tr>
+                            <tr data-nutrient="fatTotal">
+                                <td>Total Fat</td>
+                            </tr>
+                            <tr data-nutrient="SFA">
+                                <td>SFA</td>
+                            </tr>
+                            <tr data-nutrient="MUFA">
+                                <td>MUFA</td>
+                            </tr>
+                            <tr data-nutrient="PUFA">
+                                <td>PUFA</td>
+                            </tr>
+                            <tr data-nutrient="carbs">
+                                <td>Carbs</td>
+                            </tr>
+                            <tr data-nutrient="sugars">
+                                <td>Sugars</td>
+                            </tr>
+                            <tr data-nutrient="fiber">
+                                <td>Fiber</td>
+                            </tr>
+                            <tr data-nutrient="salt">
+                                <td>Salt</td>
+                            </tr>
+                        </tbody>
+                    </table>
                     </section>
-                    <em id="share-total"></em>
-                    <button>Calculate</button>
-                </form>
-                <div class="output-panel">
-                    <section id="output"></section>
-                    <section id="output-meals"></section>
-                </div>
+                    <section>
+                    <h4>Ingredients (daily)</h4>
+                    <table id="ingredients-table">
+                        <thead>
+                            <tr>
+                                <th>Ingredient</th>
+                                <th>Amount</th>
+                                <th>Purchase frequency</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table></section>
+                    <section>
+                    <h4>Estimated blood glucose</h4>
+                    <canvas
+                        id="glucose-chart"
+                        width="720"
+                        height="260"
+                    ></canvas></section>
+                    <section>
+                    <h4>
+                        Estimated plasma &beta;-hydroxybutyrate &amp; fasting
+                        benefit
+                    </h4>
+                    <canvas id="ketone-chart" width="720" height="260"></canvas>
+                    </section>
+                    <div class="card">
+                        <div>
+                            <strong>Peak &beta;-HB:</strong>
+                            <span data-slot="peak-bhb">&mdash;</span>
+                        </div>
+                        <div>
+                            <strong>Daily benefit AUC:</strong>
+                            <span data-slot="benefit-auc">&mdash;</span>
+                            <small
+                                >(hours-equivalent above the benefit
+                                threshold)</small
+                            >
+                        </div>
+                        <div>
+                            <strong>Estimated lifespan gain:</strong>
+                            <span data-slot="lifespan-gain">&mdash;</span>
+                            <small>(if sustained daily)</small>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <em class="explanation">
+                            The &beta;-HB curve is produced by a simple
+                            two-compartment model. Meal carbohydrates enter the
+                            bloodstream via each ingredient's own gamma-shaped
+                            impulse (per-ingredient GI &rarr; peak time; the
+                            co-ingested fat and fiber stretch the impulse; a
+                            post-meal walk elevates plasma glucose clearance via
+                            contraction-stimulated muscle GLUT4 uptake). A
+                            fraction &eta; =
+                            <span data-slot="eta">&mdash;</span> of absorbed
+                            carbs replenishes liver glycogen (saturating at
+                            G<sub>max</sub> =
+                            <span data-slot="g-max">&mdash;</span>, computed as
+                            <span data-slot="g-per-lbm">&mdash;</span> g/kg lean
+                            body mass); a walk reduces that fraction during the
+                            walk window. The liver drains glycogen at ~2
+                            mg/kg/min at rest and
+                            <span data-slot="walk-out-mult">&mdash;</span
+                            >&times; faster during a walk. Once glycogen falls
+                            below ~<span data-slot="g-thr">&mdash;</span> g the
+                            ketogenesis gate opens (soft sigmoid) and &beta;-HB
+                            rises toward a steady state of K<sub>max</sub>/K<sub
+                                >clr</sub
+                            >
+                            = <span data-slot="bhb-ss">&mdash;</span> mmol/L
+                            (your input). A benefit-rate sigmoid centred at
+                            <span data-slot="b-50">&mdash;</span> mmol/L
+                            converts &beta;-HB into a 0&ndash;1
+                            &ldquo;beneficial state&rdquo; indicator; its daily
+                            integral is the AUC above. <br /><br />
+                            <strong>Longevity translation.</strong> Rodent
+                            time-restricted feeding studies (<a
+                                href="https://pubmed.ncbi.nlm.nih.gov/31465934/"
+                                target="_blank"
+                                >Mitchell 2019</a
+                            >,
+                            <a
+                                href="https://pubmed.ncbi.nlm.nih.gov/35476621/"
+                                target="_blank"
+                                >Acosta-Rodr&iacute;guez 2022</a
+                            >) report roughly
+                            <span data-slot="rodent-gain">&mdash;</span>% median
+                            lifespan extension in mice whose daily fasted window
+                            plausibly yields ~<span data-slot="rodent-hours"
+                                >&mdash;</span
+                            >
+                            h/day in an elevated &beta;-HB state. This gives a
+                            rodent slope of
+                            <span data-slot="rodent-per-hour">&mdash;</span>%
+                            lifespan per hour of daily benefit AUC. We halve
+                            this (factor
+                            <span data-slot="human-factor">&mdash;</span>) as a
+                            conservative rodent&rarr;human translation, giving
+                            <span data-slot="human-per-hour">&mdash;</span>% per
+                            h/day. Your result:
+                            <span data-slot="human-per-hour">&mdash;</span>%/h
+                            &times;
+                            <span data-slot="benefit-auc">&mdash;</span>
+                            h/day =
+                            <strong
+                                ><span data-slot="lifespan-gain"
+                                    >&mdash;</span
+                                ></strong
+                            >. This is an order-of-magnitude estimate, not a
+                            personal prediction: there is no direct
+                            human-lifespan RCT of intermittent fasting, and
+                            individual variation in &beta;-HB kinetics is large.
+                        </em>
+                    </div>
+                </aside>
             </div>
         </main>
     </body>

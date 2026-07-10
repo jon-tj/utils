@@ -67,6 +67,21 @@ export function normalizeDietCalories(diet, targetCalories = 2000) {
     return diet;
 }
 
+// Return a clone of `ratios` with values scaled so they sum to 1. If the
+// input sums to 0, values are split evenly across the keys.
+export function normalizeRatios(ratios) {
+    const keys = Object.keys(ratios);
+    const sum = keys.reduce((s, k) => s + Number(ratios[k] || 0), 0);
+    const out = {};
+    if (sum <= 0) {
+        const even = keys.length > 0 ? 1 / keys.length : 0;
+        for (const k of keys) out[k] = even;
+    } else {
+        for (const k of keys) out[k] = Number(ratios[k] || 0) / sum;
+    }
+    return out;
+}
+
 // Estimate lean body mass (kg). Uses body fat % if provided, otherwise a
 // gender-based average body fat fraction (~28% female, 20% male).
 export function estimateLBM(weight, fatPrc, gender) {

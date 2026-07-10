@@ -1,4 +1,7 @@
-// Form handling and orchestration for the nutrition calculator.
+// Form handling and orchestration for the nutrition calculator. This module
+// only touches the DOM; all output tables and summary blocks live in
+// index.html and are populated in place — no HTML strings are constructed
+// here.
 
 import { ready, meals, ingredients, findMeal } from './data.js';
 import {
@@ -8,6 +11,7 @@ import {
     NUTRIENT_LABELS,
     interpolateDiet,
     normalizeDietCalories,
+    normalizeRatios,
     computeMealNutrients,
     estimateLBM,
 } from './nutrition.js';
@@ -20,9 +24,6 @@ import {
 } from './fasting.js';
 
 const FORM_ELEMENT = document.getElementById('nutrition-form');
-const OUTPUT_ELEMENT = document.getElementById('output');
-const MEAL_OUTPUT_ELEMENT = document.getElementById('output-meals');
-
 const btn = FORM_ELEMENT.querySelector('button');
 
 // Meal times (minutes from midnight) used for the blood-glucose model.
@@ -32,44 +33,184 @@ const MEAL_TIMES = {
     Dinner: 19 * 60,
 };
 
-ready.then(() => populateMealSelects());
+// -----------------------------------------------------------------------------
+// DOM helpers
+// -----------------------------------------------------------------------------
 
-function populateMealSelects() {
-    const selects = FORM_ELEMENT.querySelectorAll('[data-meal-select]');
-    selects.forEach(sel => {
-        const preferred = sel.dataset.default;
-        sel.innerHTML = meals.map((m, i) => {
-            const isSelected = preferred
-                ? m.name === preferred
-                : i === 0;
-            return `<option value="${m.name}"${isSelected ? ' selected' : ''}>${m.name}</option>`;
-        }).join('');
+// Set every element matching [data-slot="name"] to the same text value.
+function setSlot(name, value) {
+    document.querySelectorAll(`[data-slot="${name}"]`).forEach(el => {
+        el.textContent = value;
     });
 }
 
-// Live-update slider value labels and share total.
-FORM_ELEMENT.addEventListener('input', () => {
-    const shareIds = ['breakfast-share', 'lunch-share', 'dinner-share'];
-    let total = 0;
-    FORM_ELEMENT.querySelectorAll('input[type="range"]').forEach(slider => {
-        const out = FORM_ELEMENT.querySelector(`output[for="${slider.id}"]`);
-        if (slider.id === 'post-meal-walk') {
-            if (out) out.textContent = `${slider.value} min`;
-            return;
-        }
-        if (shareIds.includes(slider.id)) total += Number(slider.value);
-        if (out) out.textContent = `${slider.value}%`;
+// Populate <select data-meal-select data-default="..."> with meal names.
+function populateMealSelects() {
+    FORM_ELEMENT.querySelectorAll('[data-meal-select]').forEach(sel => {
+        const preferred = sel.dataset.default;
+        sel.replaceChildren();
+        meals.forEach((m, i) => {
+            const opt = document.createElement('option');
+            opt.value = m.name;
+            opt.textContent = m.name;
+            const isDefault = preferred ? m.name === preferred : i === 0;
+            if (isDefault) opt.selected = true;
+            sel.appendChild(opt);
+        });
     });
-    const totalEl = FORM_ELEMENT.querySelector('#share-total');
-    if (totalEl) totalEl.textContent = `Total: ${total}% of daily calories`;
+}
+
+// Reset any existing data columns on a table with one <th> header column and
+// a fixed set of <tr data-nutrient|data-row> rows.
+function resetTableColumns(table) {
+    const headerRow = table.tHead.rows[0];
+    while (headerRow.cells.length > 1) headerRow.deleteCell(-1);
+    for (const row of table.tBodies[0].rows) {
+        while (row.cells.length > 1) row.deleteCell(-1);
+    }
+}
+
+function appendCell(row, tag = 'td') {
+    const cell = document.createElement(tag);
+    row.appendChild(cell);
+    return cell;
+}
+
+// Populate the diet table with one column per entry in `columns`.
+// `columns` items: { label: string, diet: dietObject }
+function setDietTable(columns) {
+    const table = document.getElementById('diet-table');
+    resetTableColumns(table);
+    const headerRow = table.tHead.rows[0];
+    for (const col of columns) {
+        appendCell(headerRow, 'th').textContent = col.label;
+    }
+    for (const row of table.tBodies[0].rows) {
+        const key = row.dataset.nutrient;
+        if (!key) continue;
+        const [, unit] = NUTRIENT_LABELS[key];
+        for (const col of columns) {
+            appendCell(row).textContent = `${Math.round(col.diet[key])} ${unit}`;
+        }
+    }
+}
+
+// Populate the per-meal breakdown table with one column per planned meal,
+// plus a final "Total" column.
+function setMealsTable(plannedMeals) {
+    const table = document.getElementById('meals-table');
+    resetTableColumns(table);
+    const headerRow = table.tHead.rows[0];
+
+    for (const pm of plannedMeals) {
+        const mealName = pm.meal ? pm.meal.name : '—';
+        const th = appendCell(headerRow, 'th');
+        th.appendChild(document.createTextNode(pm.slot.label));
+        th.appendChild(document.createElement('br'));
+        const small = document.createElement('small');
+        small.textContent = `${mealName} (${Math.round(pm.share * 100)}%)`;
+        th.appendChild(small);
+    }
+    appendCell(headerRow, 'th').textContent = 'Total';
+
+    const nutrientKeys = Object.keys(NUTRIENT_LABELS);
+    const totals = Object.fromEntries(nutrientKeys.map(k => [k, 0]));
+    plannedMeals.forEach(pm => {
+        if (!pm.nutrients) return;
+        for (const k of nutrientKeys) totals[k] += pm.nutrients[k];
+    });
+
+    for (const row of table.tBodies[0].rows) {
+        if (row.dataset.row === 'servings') {
+            for (const pm of plannedMeals) {
+                const cell = appendCell(row);
+                if (!pm.meal || pm.scale === 0) {
+                    cell.textContent = '—';
+                } else {
+                    const amount = pm.meal.makes.amount * pm.scale;
+                    cell.textContent = `${amount.toFixed(2)} ${pm.meal.makes.unit}(s)`;
+                }
+            }
+            appendCell(row).textContent = '—';
+            continue;
+        }
+
+        const key = row.dataset.nutrient;
+        if (!key) continue;
+        const [, unit] = NUTRIENT_LABELS[key];
+        for (const pm of plannedMeals) {
+            const v = pm.nutrients ? pm.nutrients[key] : 0;
+            appendCell(row).textContent = `${Math.round(v)} ${unit}`;
+        }
+        const totalCell = appendCell(row);
+        const strong = document.createElement('strong');
+        strong.textContent = `${Math.round(totals[key])} ${unit}`;
+        totalCell.appendChild(strong);
+    }
+}
+
+// Replace the ingredients-table body with one row per ingredient.
+function setIngredientsTable(dailyIngredientGrams) {
+    const tbody = document.querySelector('#ingredients-table tbody');
+    tbody.replaceChildren();
+    for (const name of Object.keys(dailyIngredientGrams).sort()) {
+        const grams = dailyIngredientGrams[name];
+        const ing = ingredients.find(i => i.name === name);
+        let freq = '—';
+        if (ing && ing.purchaseAmount && grams > 0) {
+            const p = ing.purchaseAmount;
+            const days = p.convertedToGrams / grams;
+            const daysDisplay = days >= 1 ? days.toFixed(1) : days.toFixed(2);
+            freq = `1×${p.advertisedAmount}${p.advertisedUnit} every ${daysDisplay} day${days === 1 ? '' : 's'}`;
+        }
+        const tr = document.createElement('tr');
+        appendCell(tr).textContent = name;
+        appendCell(tr).textContent = `${Math.round(grams)} g/day`;
+        appendCell(tr).textContent = freq;
+        tbody.appendChild(tr);
+    }
+}
+
+// -----------------------------------------------------------------------------
+// Slider labels
+// -----------------------------------------------------------------------------
+
+// IDs of the three meal-share sliders. Their raw values need not sum to 100;
+// they are treated as ratios that get normalized to shares before display
+// and before calculation.
+const SHARE_SLIDER_IDS = ['breakfast-share', 'lunch-share', 'dinner-share'];
+
+function readShareRatios() {
+    const raw = {};
+    for (const id of SHARE_SLIDER_IDS) {
+        raw[id] = Number(FORM_ELEMENT.querySelector('#' + id).value);
+    }
+    return normalizeRatios(raw);
+}
+
+FORM_ELEMENT.addEventListener('input', () => {
+    const walkSlider = FORM_ELEMENT.querySelector('#post-meal-walk');
+    if (walkSlider) {
+        const out = FORM_ELEMENT.querySelector(`output[for="${walkSlider.id}"]`);
+        if (out) out.textContent = `${walkSlider.value} min`;
+    }
+    const shares = readShareRatios();
+    for (const id of SHARE_SLIDER_IDS) {
+        const out = FORM_ELEMENT.querySelector(`output[for="${id}"]`);
+        if (out) out.textContent = `${Math.round(shares[id] * 100)}%`;
+    }
 });
+
+ready.then(() => populateMealSelects());
+
+// -----------------------------------------------------------------------------
+// Main click handler
+// -----------------------------------------------------------------------------
 
 btn.addEventListener('click', (event) => {
     event.preventDefault();
 
-    // -------------------------------------------------------------------
-    // 1. BMR / TDEE / diet targets
-    // -------------------------------------------------------------------
+    // ---- 1. BMR / TDEE / diet targets --------------------------------------
     const age = Number(FORM_ELEMENT.querySelector('#age').value);
     const weight = Number(FORM_ELEMENT.querySelector('#weight').value);
     const height = Number(FORM_ELEMENT.querySelector('#height').value);
@@ -79,6 +220,7 @@ btn.addEventListener('click', (event) => {
     const dietRatio = Number(FORM_ELEMENT.querySelector('#interpolate-diet').value) * 0.01;
     const caloricRestriction = Number(FORM_ELEMENT.querySelector('#caloric-restriction').value) * 0.01;
     const bhb24h = Number(FORM_ELEMENT.querySelector('#bhb-24h').value) || 1.5;
+    const targetBMI = Number(FORM_ELEMENT.querySelector('#target-bmi').value) || 25;
 
     const interpolatedDiet = interpolateDiet(MEDITERRANEAN_DIET, ARIC_DIET, dietRatio);
 
@@ -96,14 +238,11 @@ btn.addEventListener('click', (event) => {
     const tdee = bmr * activity;
     const restrictedTdee = tdee * (1 - caloricRestriction);
 
-    // Adjust calories based on current-vs-target BMI. Rule of thumb:
-    // ~500 kcal/day deficit ≈ 0.45 kg/week weight change. 1 BMI unit for a
-    // typical adult ≈ 3 kg, so we scale by 500 kcal per BMI unit off target,
-    // capped at ±750 kcal/day to keep the change safe.
-    const targetBMI = Number(FORM_ELEMENT.querySelector('#target-bmi').value) || 25;
+    // BMI-driven calorie adjustment: ±500 kcal/day per BMI unit off target,
+    // capped at ±750.
     const heightM = height / 100;
     const currentBMI = heightM > 0 ? weight / (heightM * heightM) : targetBMI;
-    const bmiDelta = targetBMI - currentBMI; // >0 = user wants to gain, <0 = lose
+    const bmiDelta = targetBMI - currentBMI;
     const bmiCalorieDelta = Math.max(-750, Math.min(750, bmiDelta * 500));
 
     const caloryTarget = restrictedTdee + bmiCalorieDelta;
@@ -116,43 +255,17 @@ btn.addEventListener('click', (event) => {
     else if (bmiCalorieDelta > 100) goalLabel = 'Weight Gain';
     else goalLabel = 'Maintenance';
 
-    const columns = [[goalLabel, targetDiet]];
+    setSlot('model', modelToUse);
+    setSlot('bmr', `${Math.round(bmr)} kcal/day`);
+    setSlot('tdee', `${Math.round(tdee)} kcal/day`);
+    setSlot('bmi',
+        `${currentBMI.toFixed(1)} (target ${targetBMI.toFixed(1)}, ` +
+        `${bmiCalorieDelta >= 0 ? '+' : ''}${Math.round(bmiCalorieDelta)} kcal/day)`);
 
-    const rows = Object.keys(NUTRIENT_LABELS).map(key => {
-        const [label, unit] = NUTRIENT_LABELS[key];
-        const cells = columns.map(([, diet]) => `<td>${Math.round(diet[key])} ${unit}</td>`).join('');
-        return `<tr><td>${label}</td>${cells}</tr>`;
-    }).join('');
+    setDietTable([{ label: goalLabel, diet: targetDiet }]);
 
-    OUTPUT_ELEMENT.innerHTML = `
-        <div class="summary">
-            <div><strong>Model:</strong> ${modelToUse}</div>
-            <div><strong>BMR:</strong> ${Math.round(bmr)} kcal/day</div>
-            <div><strong>TDEE:</strong> ${Math.round(tdee)} kcal/day</div>
-            <div><strong>Current BMI:</strong> ${currentBMI.toFixed(1)}
-                (target ${targetBMI.toFixed(1)},
-                ${bmiCalorieDelta >= 0 ? '+' : ''}${Math.round(bmiCalorieDelta)} kcal/day)</div>
-        </div>
-        <table>
-            <thead>
-                <tr>
-                    <th>Nutrient</th>
-                    ${columns.map(([name]) => `<th>${name}</th>`).join('')}
-                </tr>
-            </thead>
-            <tbody>
-                ${rows}
-            </tbody>
-        </table>
-    `;
-
-    // -------------------------------------------------------------------
-    // 2. Meal planning + glucose + fasting
-    // -------------------------------------------------------------------
-    if (!meals.length || !ingredients.length) {
-        MEAL_OUTPUT_ELEMENT.innerHTML = `<em>Loading meal/ingredient data…</em>`;
-        return;
-    }
+    // ---- 2. Meal planning --------------------------------------------------
+    if (!meals.length || !ingredients.length) return;
 
     const dailyCalories = targetDiet.calories;
 
@@ -162,9 +275,11 @@ btn.addEventListener('click', (event) => {
         { label: 'Dinner',    shareId: 'dinner-share',    mealId: 'dinner-meal' },
     ];
 
+    const shares = readShareRatios();
+
     const dailyIngredientGrams = {};
     const plannedMeals = slots.map(slot => {
-        const share = Number(FORM_ELEMENT.querySelector('#' + slot.shareId).value) * 0.01;
+        const share = shares[slot.shareId];
         const mealName = FORM_ELEMENT.querySelector('#' + slot.mealId).value;
         const meal = findMeal(mealName);
         const mealTime = MEAL_TIMES[slot.label];
@@ -188,83 +303,10 @@ btn.addEventListener('click', (event) => {
         return { slot, meal, share, scale, mealTime, nutrients, scaledIngredients };
     });
 
-    const nutrientKeys = Object.keys(NUTRIENT_LABELS);
-    const nutrientTotals = Object.fromEntries(nutrientKeys.map(k => [k, 0]));
-    plannedMeals.forEach(pm => {
-        if (!pm.nutrients) return;
-        for (const k of nutrientKeys) nutrientTotals[k] += pm.nutrients[k];
-    });
+    setMealsTable(plannedMeals);
+    setIngredientsTable(dailyIngredientGrams);
 
-    const nutrientRows = nutrientKeys.map(key => {
-        const [label, unit] = NUTRIENT_LABELS[key];
-        const cells = plannedMeals.map(pm =>
-            `<td>${pm.nutrients ? Math.round(pm.nutrients[key]) : 0} ${unit}</td>`
-        ).join('');
-        return `<tr><td>${label}</td>${cells}<td><strong>${Math.round(nutrientTotals[key])} ${unit}</strong></td></tr>`;
-    }).join('');
-
-    const mealHeaderCells = plannedMeals.map(pm => {
-        const mealName = pm.meal ? pm.meal.name : '—';
-        return `<th>${pm.slot.label}<br><small>${mealName} (${Math.round(pm.share * 100)}%)</small></th>`;
-    }).join('');
-
-    const servingRow = `<tr><td>Servings</td>${
-        plannedMeals.map(pm => {
-            if (!pm.meal || pm.scale === 0) return `<td>—</td>`;
-            const amount = pm.meal.makes.amount * pm.scale;
-            return `<td>${amount.toFixed(2)} ${pm.meal.makes.unit}(s)</td>`;
-        }).join('')
-    }<td>—</td></tr>`;
-
-    const ingredientRows = Object.keys(dailyIngredientGrams).sort().map(name => {
-        const grams = dailyIngredientGrams[name];
-        const ing = ingredients.find(i => i.name === name);
-        let freq = '—';
-        if (ing && ing.purchaseAmount && grams > 0) {
-            const p = ing.purchaseAmount;
-            const days = p.convertedToGrams / grams;
-            const daysDisplay = days >= 1 ? days.toFixed(1) : days.toFixed(2);
-            freq = `1×${p.advertisedAmount}${p.advertisedUnit} every ${daysDisplay} day${days === 1 ? '' : 's'}`;
-        }
-        return `<tr><td>${name}</td><td>${Math.round(grams)} g/day</td><td>${freq}</td></tr>`;
-    }).join('');
-
-    MEAL_OUTPUT_ELEMENT.innerHTML = `
-        <h4>Per-meal breakdown</h4>
-        <table>
-            <thead>
-                <tr>
-                    <th>Nutrient</th>
-                    ${mealHeaderCells}
-                    <th>Total</th>
-                </tr>
-            </thead>
-            <tbody>
-                ${servingRow}
-                ${nutrientRows}
-            </tbody>
-        </table>
-        <h4>Ingredients (daily)</h4>
-        <table>
-            <thead>
-                <tr>
-                    <th>Ingredient</th>
-                    <th>Amount</th>
-                    <th>Purchase frequency</th>
-                </tr>
-            </thead>
-            <tbody>
-                ${ingredientRows}
-            </tbody>
-        </table>
-        <h4>Estimated blood glucose</h4>
-        <canvas id="glucose-chart" width="720" height="260"></canvas>
-        <h4>Estimated plasma &beta;-hydroxybutyrate &amp; fasting benefit</h4>
-        <canvas id="ketone-chart" width="720" height="260"></canvas>
-        <div id="longevity-summary"></div>
-        <em id="longevity-explanation"></em>
-    `;
-
+    // ---- 3. Charts + fasting sim ------------------------------------------
     const walkMinutes = Number(FORM_ELEMENT.querySelector('#post-meal-walk').value) || 0;
     drawGlucoseChart(document.getElementById('glucose-chart'), plannedMeals, walkMinutes, weight);
 
@@ -277,56 +319,26 @@ btn.addEventListener('click', (event) => {
         .map(pm => ({ label: pm.slot.label, time: pm.mealTime }));
     drawKetoneChart(document.getElementById('ketone-chart'), sim, mealMarkers);
 
+    // ---- 4. Longevity summary + explanation slots -------------------------
     const rodentPerHour =
         FASTING.RODENT_LIFESPAN_GAIN_PERCENT / FASTING.RODENT_DAILY_BENEFIT_HOURS;
     const humanPerHour = rodentPerHour * FASTING.HUMAN_TRANSLATION_FACTOR;
 
-    document.getElementById('longevity-summary').innerHTML = `
-        <div class="summary">
-            <div><strong>Peak &beta;-HB:</strong> ${Math.max(...sim.B).toFixed(2)} mmol/L</div>
-            <div><strong>Daily benefit AUC:</strong> ${sim.benefitAucHours.toFixed(2)} h/day
-                <small>(hours-equivalent above the benefit threshold)</small></div>
-            <div><strong>Estimated lifespan gain:</strong> ${gainPercent.toFixed(2)}%
-                <small>(if sustained daily)</small></div>
-        </div>
-    `;
+    setSlot('peak-bhb', `${Math.max(...sim.B).toFixed(2)} mmol/L`);
+    setSlot('benefit-auc', `${sim.benefitAucHours.toFixed(2)} h/day`);
+    setSlot('lifespan-gain', `${gainPercent.toFixed(2)}%`);
 
-    document.getElementById('longevity-explanation').innerHTML = `
-        The &beta;-HB curve is produced by a simple two-compartment model.
-        Meal carbohydrates enter the bloodstream via each ingredient's own
-        gamma-shaped impulse (per-ingredient GI &rarr; peak time; the
-        co-ingested fat and fiber in the same meal reduce peak amplitude
-        and delay it; a post-meal walk uniformly reduces amplitude via
-        muscle GLUT4 uptake). A fraction &eta; = ${FASTING.ETA_BASE.toFixed(2)}
-        of absorbed carbs replenishes liver glycogen (saturating at
-        G<sub>max</sub> = ${sim.G_max.toFixed(0)} g, computed as
-        ${FASTING.G_MAX_PER_KG_LBM} g/kg lean body mass); a walk reduces
-        that fraction proportionally. The liver drains glycogen at ~2
-        mg/kg/min at rest and ${FASTING.K_OUT_WALK_MULT}&times; faster
-        during a walk. Once glycogen falls below ~${FASTING.G_THR} g the
-        ketogenesis gate opens (soft sigmoid) and &beta;-HB rises toward a
-        steady state of K<sub>max</sub>/K<sub>clr</sub> =
-        ${bhb24h.toFixed(1)} mmol/L (your input). A benefit-rate sigmoid
-        centred at ${FASTING.B_50} mmol/L converts &beta;-HB into a 0&ndash;1
-        “beneficial state” indicator; its daily integral is the AUC
-        above.
-        <br><br>
-        <strong>Longevity translation.</strong> Rodent time-restricted
-        feeding studies
-        (<a href="https://pubmed.ncbi.nlm.nih.gov/31465934/" target="_blank">Mitchell 2019</a>,
-        <a href="https://pubmed.ncbi.nlm.nih.gov/35476621/" target="_blank">Acosta-Rodríguez 2022</a>)
-        report roughly ${FASTING.RODENT_LIFESPAN_GAIN_PERCENT}% median
-        lifespan extension in mice whose daily fasted window plausibly
-        yields ~${FASTING.RODENT_DAILY_BENEFIT_HOURS} h/day in an elevated
-        &beta;-HB state. This gives a rodent slope of
-        ${rodentPerHour.toFixed(2)}% lifespan per hour of daily benefit
-        AUC. We halve this (factor
-        ${FASTING.HUMAN_TRANSLATION_FACTOR}) as a conservative rodent&rarr;human
-        translation, giving ${humanPerHour.toFixed(2)}% per h/day. Your
-        result: ${sim.benefitAucHours.toFixed(2)} h/day &times;
-        ${humanPerHour.toFixed(2)}%/h = <strong>${gainPercent.toFixed(2)}%</strong>.
-        This is an order-of-magnitude estimate, not a personal prediction:
-        there is no direct human-lifespan RCT of intermittent fasting, and
-        individual variation in &beta;-HB kinetics is large.
-    `;
+    setSlot('eta', FASTING.ETA_BASE.toFixed(2));
+    setSlot('g-max', `${sim.G_max.toFixed(0)} g`);
+    setSlot('g-per-lbm', FASTING.G_MAX_PER_KG_LBM.toFixed(1));
+    setSlot('walk-out-mult', FASTING.K_OUT_WALK_MULT.toFixed(1));
+    setSlot('g-thr', FASTING.G_THR.toString());
+    setSlot('bhb-ss', bhb24h.toFixed(1));
+    setSlot('b-50', FASTING.B_50.toString());
+
+    setSlot('rodent-gain', FASTING.RODENT_LIFESPAN_GAIN_PERCENT.toString());
+    setSlot('rodent-hours', FASTING.RODENT_DAILY_BENEFIT_HOURS.toString());
+    setSlot('rodent-per-hour', rodentPerHour.toFixed(2));
+    setSlot('human-factor', FASTING.HUMAN_TRANSLATION_FACTOR.toString());
+    setSlot('human-per-hour', humanPerHour.toFixed(2));
 });
