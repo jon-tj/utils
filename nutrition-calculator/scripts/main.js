@@ -213,6 +213,7 @@ ready.then(() => {
     populateMealSelects();
     restoreFormState();
     FORM_ELEMENT.dispatchEvent(new Event('input'));
+    if (FORM_ELEMENT.checkValidity()) btn.click();
 });
 
 // -----------------------------------------------------------------------------
