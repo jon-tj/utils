@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Real Estate Calculator</title>
+        <link href="../shared/theme.css" rel="stylesheet" />
+        <link href="styles.css" rel="stylesheet" />
+    </head>
+    <body>
+        <main>
+            <h3>Real Estate Calculator</h3>
+            <hr />
+            <div class="layout">
+                <aside>
+                    <form id="apartment-form" class="card">
+                        <section>
+                            <label for="location">Location</label>
+                            <select name="location" id="location" required>
+                                <option value="">Select</option>
+                            </select>
+                        </section>
+                        <section>
+                            <label for="sqm">Size (m&sup2;)</label>
+                            <input
+                                type="number"
+                                step="any"
+                                name="sqm"
+                                id="sqm"
+                                value="70"
+                                required
+                            />
+                        </section>
+                        <section>
+                            <label for="price-per-sqm">
+                                Price per m&sup2;<sup>&dagger;</sup>
+                            </label>
+                            <input
+                                type="number"
+                                step="any"
+                                name="price-per-sqm"
+                                id="price-per-sqm"
+                            />
+                        </section>
+                        <section>
+                            <label for="bedrooms">Bedrooms</label>
+                            <input
+                                type="number"
+                                step="1"
+                                min="0"
+                                name="bedrooms"
+                                id="bedrooms"
+                                value="2"
+                            />
+                        </section>
+                        <section>
+                            <label for="floor">Floor</label>
+                            <input
+                                type="number"
+                                step="1"
+                                name="floor"
+                                id="floor"
+                                value="1"
+                            />
+                        </section>
+                        <section>
+                            <label for="tax-monthly">Tax (monthly)</label>
+                            <input
+                                type="number"
+                                step="any"
+                                min="0"
+                                name="tax-monthly"
+                                id="tax-monthly"
+                                value="0"
+                            />
+                        </section>
+                        <section>
+                            <label for="fees-monthly">Fees (monthly)</label>
+                            <input
+                                type="number"
+                                step="any"
+                                min="0"
+                                name="fees-monthly"
+                                id="fees-monthly"
+                                value="0"
+                            />
+                        </section>
+                        <section class="form-handles">
+                            <button class="transparent" id="btn-reset">Reset</button>
+                            <button class="primary" id="btn-calculate">Calculate</button>
+                        </section>
+                    </form>
+                    <div class="card note">
+                        <em>
+                            <sup>&dagger;</sup> Price per m&sup2; is
+                            pre-filled with the latest quarterly average for
+                            the selected location, but can be overridden.
+                        </em>
+                    </div>
+                </aside>
+                <aside>
+                    <div class="card">
+                        <div class="result-headline">
+                            <span data-slot="apartment-value">&mdash;</span>
+                        </div>
+                        <hr />
+                        <div class="result-grid">
+                            <strong>Location</strong>
+                            <span data-slot="location">&mdash;</span>
+                            <strong>Size</strong>
+                            <span data-slot="sqm">&mdash;</span>
+                            <strong>Price per m&sup2;</strong>
+                            <span data-slot="price-per-sqm">&mdash;</span>
+                            <strong>Bedrooms</strong>
+                            <span data-slot="bedrooms">&mdash;</span>
+                            <strong>Floor</strong>
+                            <span data-slot="floor">&mdash;</span>
+                            <strong>Monthly costs</strong>
+                            <span data-slot="monthly-costs">&mdash;</span>
+                            <strong>Annual costs</strong>
+                            <span data-slot="annual-costs">&mdash;</span>
+                        </div>
+                    </div>
+                    <section>
+                        <h4>Historical price per m&sup2;</h4>
+                        <table id="history-table">
+                            <thead>
+                                <tr>
+                                    <th>Period</th>
+                                    <th>Price per m&sup2;</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </section>
+                </aside>
+            </div>
+            <footer class="card">
+                <cite>
+                    <p>Numbers are estimates &mdash; use as a starting point, not a valuation.</p>
+                    <p>&mdash; Jon</p>
+                </cite>
+            </footer>
+        </main>
+    </body>
+    <script type="module" src="scripts/main.js"></script>
+</html>
