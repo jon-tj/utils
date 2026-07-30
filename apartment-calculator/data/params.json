@@ -1,0 +1,24 @@
+{
+    "Brazil": {
+        "bedrooms": 0.0177,
+        "expectedFloor": 0.0192,
+        "feesTotal": 0.0000,
+        "logSqm": 0.9848,
+        "region_Botafogo": -0.1164,
+        "region_Niterói_Centro": -0.8037,
+        "region_Copacabana": -0.1410,
+        "region_Flamengo": -0.0201,
+        "region_Fonseca": -1.4343,
+        "region_Icaraí": -0.6010,
+        "region_Ingá": -0.3842,
+        "region_Ipanema": 0.4380,
+        "region_Lagoa": 0.2124,
+        "region_Laranjeiras": -0.4006,
+        "region_Leblon": 0.5800,
+        "region_Other": -1.1556,
+        "region_Recreio": -0.6714,
+        "region_Tijuca": -1.0051,
+        "intercept": 10.2062472
+    },
+    "Norway": {}
+}

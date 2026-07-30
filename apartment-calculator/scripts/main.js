@@ -1,9 +1,15 @@
 import {
     ready,
     historicalHomePrices,
+    priceFactorParams,
     latestPricePerSqm,
+    getHistoryFor,
 } from './data.js';
-import { calculate_apartment_value } from './apartment-calculator.js';
+import {
+    calculate_apartment_value,
+    classifyLocation,
+    LOCATION_TO_REGION,
+} from './apartment-calculator.js';
 
 const FORM_ELEMENT = document.getElementById('apartment-form');
 const locationSelect = FORM_ELEMENT.querySelector('#location');
@@ -22,7 +28,17 @@ function setSlot(name, value) {
 }
 
 function populateLocationSelect() {
-    const names = Object.keys(historicalHomePrices);
+    // Start with locations that have their own historical series, then add
+    // any additional locations we know how to price (e.g. Niterói
+    // neighborhoods) that fall back to the Rio de Janeiro average series.
+    const seen = new Set();
+    const names = [];
+    for (const name of Object.keys(historicalHomePrices)) {
+        if (!seen.has(name)) { seen.add(name); names.push(name); }
+    }
+    for (const name of Object.keys(LOCATION_TO_REGION.Brazil)) {
+        if (!seen.has(name)) { seen.add(name); names.push(name); }
+    }
     for (const name of names) {
         const opt = document.createElement('option');
         opt.value = name;
@@ -48,7 +64,7 @@ function effectivePricePerSqm(rawValue) {
 function renderHistoryTable(location) {
     const tbody = document.querySelector('#history-table tbody');
     tbody.replaceChildren();
-    const entry = historicalHomePrices[location];
+    const entry = getHistoryFor(location);
     if (!entry) return;
     // Show most recent first, limit to a reasonable number of rows.
     const rows = entry.dates
@@ -87,16 +103,13 @@ function readForm() {
 function render(result) {
     setSlot('apartment-value', numberFmt.format(result.value));
     setSlot('location', result.location || '—');
-    setSlot('sqm', `${numberFmt.format(result.sqm)} m²`);
     setSlot('price-per-sqm', numberFmt.format(result.pricePerSqm));
-    setSlot('bedrooms', result.bedrooms);
-    setSlot('floor', result.floor);
-    setSlot('monthly-costs', numberFmt.format(result.monthlyCosts));
-    setSlot('annual-costs', numberFmt.format(result.annualCosts));
 }
 
 function calculate() {
     const f = readForm();
+    const { country, region } = classifyLocation(f.location);
+    const countryParams = priceFactorParams[country];
     const result = calculate_apartment_value(
         f.sqm,
         f.pricePerSqm,
@@ -105,6 +118,8 @@ function calculate() {
         f.floor,
         f.taxMonthly,
         f.feesMonthly,
+        countryParams,
+        region,
     );
     render(result);
     renderHistoryTable(f.location);
