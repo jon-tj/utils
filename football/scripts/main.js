@@ -13,7 +13,7 @@ function setTableValues(valuesMatrix = null) {
             const cell = document.createElement('td');
             const prefix = i > j ? "A" : (i == j ? "" : "B");
             const prob = valuesMatrix ? valuesMatrix[i][j] : 0;
-            let hue = "inferno-" + Math.min(9, Math.floor(prob * 200));
+            let hue = "blues-" + Math.min(9, Math.floor(prob * 200));
             cell.innerHTML = `<p>${i + 1}-${j + 1} ${prefix}</p><p class='muted'>${(prob * 100).toFixed(2)}%</p>`;
             cell.setAttribute('data-tone', hue);
             row.appendChild(cell);
@@ -28,13 +28,20 @@ setTableValues();
 const btnCalculate = document.getElementById('btn-calculate');
 btnCalculate.addEventListener('click', (e) => {
     e.preventDefault();
-    const eloTeamA = parseFloat(document.getElementById('elo-team-a').value);
-    const eloTeamB = parseFloat(document.getElementById('elo-team-b').value);
-    const oddsDraw = parseFloat(document.getElementById('odds-draw').value);
+    const readNumber = (id, fallback) => {
+        const value = parseFloat(document.getElementById(id).value);
+        return Number.isFinite(value) ? value : fallback;
+    };
+    const eloTeamA = readNumber('elo-team-a', 0);
+    const eloTeamB = readNumber('elo-team-b', 0);
+    const oddsDraw = readNumber('odds-draw', 1);
+    const oddsTeamA = readNumber('odds-team-a', 1);
+    const oddsTeamB = readNumber('odds-team-b', 1);
 
     const resultMatrix = [];
-    const xGA = 3;
-    const xGB = 3;
+    const xGA = 2 + (eloTeamB - eloTeamA) / 400 + (1 / oddsDraw) * 0.5;
+    console.log(eloTeamA ?? 0, eloTeamB, oddsDraw, xGA);
+    const xGB = 2 + (eloTeamA - eloTeamB) / 400 + (1 / oddsDraw) * 0.5;
 
     for (let i = 0; i < tableSize; i++) {
         const row = [];
@@ -45,8 +52,4 @@ btnCalculate.addEventListener('click', (e) => {
         resultMatrix.push(row);
     }
     setTableValues(resultMatrix);
-
-    // Verify probabilities sum to 100
-    const totalProbability = resultMatrix.flat().reduce((sum, prob) => sum + prob, 0);
-    console.log(`Total Probability: ${(totalProbability * 100).toFixed(2)}%`);
 });

@@ -55,6 +55,10 @@ button.transparent:hover {
     color: var(--color-text-inversed);
 }
 
+.muted {
+    color: var(--color-text-muted);
+}
+
 main {
     width: min(100%, 1400px);
     margin: auto;
@@ -129,42 +133,77 @@ td[data-tone="low-2"] strong {
     color: inherit;
 }
 
-/* Inferno colormap */
-td[data-tone="inferno-0"] {
+/* viridis colormap */
+td[data-tone="viridis-0"] {
     background-color: #460A5D;
     color: var(--color-text-inversed);
 }
-td[data-tone="inferno-1"] {
+td[data-tone="viridis-1"] {
     background-color: #46307D;
     color: var(--color-text-inversed);
 }
-td[data-tone="inferno-2"] {
+td[data-tone="viridis-2"] {
     background-color: #3A528B;
     color: var(--color-text-inversed);
 }
-td[data-tone="inferno-3"] {
+td[data-tone="viridis-3"] {
     background-color: #2D6F8E;
     color: var(--color-text-inversed);
 }
-td[data-tone="inferno-4"] {
+td[data-tone="viridis-4"] {
     background-color: #228B8D;
     color: var(--color-text-inversed);
 }
-td[data-tone="inferno-5"] {
+td[data-tone="viridis-5"] {
     background-color: #21A585;
     color: var(--color-text-inversed);
 }
-td[data-tone="inferno-6"] {
+td[data-tone="viridis-6"] {
     background-color: #44BE70;
 }
-td[data-tone="inferno-7"] {
+td[data-tone="viridis-7"] {
     background-color: #84D44A;
 }
-td[data-tone="inferno-8"] {
+td[data-tone="viridis-8"] {
     background-color: #D2E11A;
 }
-td[data-tone="inferno-9"] {
+td[data-tone="viridis-9"] {
     background-color: #FDE724;
+}
+
+/* blues colormap */
+td[data-tone="blues-0"] {
+    background-color: #F2F8FD;
+}
+td[data-tone="blues-1"] {
+    background-color: #DDEAF6;
+}
+td[data-tone="blues-2"] {
+    background-color: #C8DCEF;
+}
+td[data-tone="blues-3"] {
+    background-color: #A5CDE3;
+}
+td[data-tone="blues-4"] {
+    background-color: #78B5D8;
+}
+td[data-tone="blues-5"] {
+    background-color: #4F9BCB;
+}
+td[data-tone="blues-6"] {
+    background-color: #2F7FBC;
+}
+td[data-tone="blues-7"] {
+    background-color: #1662AA;
+    color: var(--color-text-inversed);
+}
+td[data-tone="blues-8"] {
+    background-color: #08448A;
+    color: var(--color-text-inversed);
+}
+td[data-tone="blues-9"] {
+    background-color: #08306B;
+    color: var(--color-text-inversed);
 }
 
 @media (max-width: 600px) {
