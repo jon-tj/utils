@@ -80,3 +80,134 @@ main {
     gap: 1rem;
     border-radius: 0.7rem;
 }
+
+/* Table */
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+th,
+td {
+    padding: 8px 12px;
+    text-align: right;
+    border-bottom: 1px solid var(--color-table-border);
+}
+
+tr.even {
+    background-color: var(--color-table-background);
+}
+
+th {
+    background-color: var(--color-primary);
+    color: var(--color-text-inversed);
+    text-align: center;
+}
+
+td[data-tone="low-2"] {
+    background-color: var(--color-table-gradient-1);
+    color: var(--color-text-inversed);
+}
+td[data-tone="low-1"] {
+    background-color: var(--color-table-gradient-2);
+}
+td[data-tone="none"] {
+    background-color: var(--color-table-background);
+}
+td[data-tone="high-1"] {
+    background-color: var(--color-table-gradient-3);
+}
+td[data-tone="high-2"] {
+    background-color: var(--color-table-gradient-4);
+    color: var(--color-text-inversed);
+}
+td[data-tone="high-2"] strong,
+td[data-tone="low-2"] strong {
+    color: inherit;
+}
+
+/* Inferno colormap */
+td[data-tone="inferno-0"] {
+    background-color: #460A5D;
+    color: var(--color-text-inversed);
+}
+td[data-tone="inferno-1"] {
+    background-color: #46307D;
+    color: var(--color-text-inversed);
+}
+td[data-tone="inferno-2"] {
+    background-color: #3A528B;
+    color: var(--color-text-inversed);
+}
+td[data-tone="inferno-3"] {
+    background-color: #2D6F8E;
+    color: var(--color-text-inversed);
+}
+td[data-tone="inferno-4"] {
+    background-color: #228B8D;
+    color: var(--color-text-inversed);
+}
+td[data-tone="inferno-5"] {
+    background-color: #21A585;
+    color: var(--color-text-inversed);
+}
+td[data-tone="inferno-6"] {
+    background-color: #44BE70;
+}
+td[data-tone="inferno-7"] {
+    background-color: #84D44A;
+}
+td[data-tone="inferno-8"] {
+    background-color: #D2E11A;
+}
+td[data-tone="inferno-9"] {
+    background-color: #FDE724;
+}
+
+@media (max-width: 600px) {
+    form {
+        padding: 12px;
+    }
+    form section {
+        grid-template-columns: 1fr;
+        gap: 4px;
+    }
+    th,
+    td {
+        padding: 6px 8px;
+        font-size: 0.9rem;
+    }
+    body {
+        margin: 0;
+    }
+    h3 {
+        padding: 0rem 0.5rem;
+    }
+}
+
+/* Input form */
+
+.form-handles {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+}
+
+form section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+select,
+input {
+    padding: 0.5rem;
+    border-radius: 0.4rem;
+    border: none;
+}
+select:focus,
+input:focus {
+    outline: 2px solid var(--color-primary);
+}

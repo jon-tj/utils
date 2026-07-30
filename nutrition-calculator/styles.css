@@ -32,26 +32,9 @@ aside {
     gap: 1rem;
 }
 
-.form-handles {
-    display: grid;
-    grid-template-columns: 1fr 2fr;
-}
-
-form section {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-}
-
-select,
-input {
-    padding: 0.5rem;
-    border-radius: 0.4rem;
-    border: none;
-}
-select:focus,
-input:focus {
-    outline: 2px solid var(--color-primary);
+td:first-child {
+    text-align: left;
+    font-weight: bold;
 }
 
 .slider label {
@@ -73,84 +56,12 @@ h4 {
     margin: 20px 0 10px;
 }
 
-table {
-    width: 100%;
-    border-collapse: collapse;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
-}
-
-th,
-td {
-    padding: 8px 12px;
-    text-align: right;
-    border-bottom: 1px solid var(--color-table-border);
-}
-
-tr.even {
-    background-color: var(--color-table-background);
-}
-
-th {
-    background-color: var(--color-primary);
-    color: var(--color-text-inversed);
-    text-align: center;
-}
-
-td:first-child {
-    text-align: left;
-    font-weight: bold;
-}
-
-@media (max-width: 600px) {
-    form {
-        padding: 12px;
-    }
-    form section {
-        grid-template-columns: 1fr;
-        gap: 4px;
-    }
-    th,
-    td {
-        padding: 6px 8px;
-        font-size: 0.9rem;
-    }
-    body {
-        margin: 0;
-    }
-}
-
 footer {
     margin-top: 3rem;
 }
 
 .note {
     background-color: var(--color-note-background);
-}
-
-/* Per-meal breakdown: color the Total column by est. mortality deviation
-   from the target diet. Two shades of red = too high, two shades of blue =
-   too low, neutral gray = within an acceptable range. */
-#meals-table td[data-tone="low-2"] {
-    background-color: var(--color-table-gradient-1);
-    color: var(--color-text-inversed);
-}
-#meals-table td[data-tone="low-1"] {
-    background-color: var(--color-table-gradient-2);
-}
-#meals-table td[data-tone="none"] {
-    background-color: var(--color-table-background);
-}
-#meals-table td[data-tone="high-1"] {
-    background-color: var(--color-table-gradient-3);
-}
-#meals-table td[data-tone="high-2"] {
-    background-color: var(--color-table-gradient-4);
-    color: var(--color-text-inversed);
-}
-#meals-table td[data-tone="high-2"] strong,
-#meals-table td[data-tone="low-2"] strong {
-    color: inherit;
 }
 
 .mortality-legend {

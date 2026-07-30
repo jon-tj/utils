@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Football Calculator</title>
+        <link href="../shared/theme.css" rel="stylesheet" />
+        <link href="styles.css" rel="stylesheet" />
+        <link rel="icon" href="../shared/favicon.png" />
+    </head>
+    <body>
+        <main>
+            <h3>Football Calculator</h3>
+            <hr>
+            <div class="layout">
+                <aside>
+                    <form class="card">
+                        <section>
+                            <label for="elo-team-a">Odds Team A</label>
+                            <input
+                                type="number"
+                                step="any"
+                                name="elo-team-a"
+                                id="elo-team-a"
+                                required
+                            />
+                        </section>
+                        <section>
+                            <label for="odds-draw">Odds Draw</label>
+                            <input
+                                type="number"
+                                step="any"
+                                name="odds-draw"
+                                id="odds-draw"
+                                required
+                            />
+                        </section>
+                        <section>
+                            <label for="elo-team-b">Odds Team B</label>
+                            <input
+                                type="number"
+                                step="any"
+                                name="elo-team-b"
+                                id="elo-team-b"
+                                required
+                            />
+                        </section>
+                        
+                        <section>
+                            <label for="elo-team-a">Elo Team A</label>
+                            <input
+                                type="number"
+                                step="any"
+                                name="elo-team-a"
+                                id="elo-team-a"
+                                required
+                            />
+                        </section>
+                        <section>
+                            <label for="elo-team-b">Elo Team B</label>
+                            <input
+                                type="number"
+                                step="any"
+                                name="elo-team-b"
+                                id="elo-team-b"
+                                required
+                            />
+                        </section>
+                        
+                        <section>
+                            <label for="elo-team-b">Pinnacle URL</label>
+                            <input
+                                type="url"
+                                name="pinnacle-url"
+                                id="pinnacle-url"
+                                required
+                            />
+                        </section>
+
+                        <section class="form-handles">
+                            <button class="transparent" id="btn-reset">Reset</button>
+                            <button class="primary" id="btn-calculate">Calculate</button>
+                        </section>
+                    </form>
+                </aside>
+                <aside>
+                    <table id="score-table">
+                        <thead>
+                            <tr>
+                                <th colspan="7">Correct Score Probabilities</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                </aside>
+            </div>
+        </main>
+    </body>
+    <script type="module" src="scripts/main.js"></script>
+</html>
