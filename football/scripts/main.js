@@ -4,19 +4,22 @@ const scoreTable = document.getElementById('score-table');
 const tableBody = scoreTable.querySelector('tbody');
 const xGASlot = document.querySelector('[data-slot="xGA"]');
 const xGBSlot = document.querySelector('[data-slot="xGB"]');
+const mostLikelyOutcome = document.querySelector('[data-slot="most-likely-outcome"]');
+const mostLikelyOutcomeProbability = document.querySelector('[data-slot="most-likely-outcome-probability"]');
 
 const tableSize = 7;
 function setTableValues(valuesMatrix = null) {
+    const maxProb = valuesMatrix ? Math.max(...valuesMatrix.flat()) : 1;
     tableBody.innerHTML = ''; // Clear existing rows
     for (let k = 0; k < tableSize; k++) {
         const row = document.createElement('tr');
         const i = tableSize - 1 - k; // Reverse the order of rows
         for (let j = 0; j < tableSize; j++) {
             const cell = document.createElement('td');
-            const prefix = i > j ? "Home" : (i == j ? "" : "Away");
+            const prefix = i > j ? "H" : (i == j ? "D" : "A");
             const prob = valuesMatrix ? valuesMatrix[i][j] : 0;
-            let hue = "inferno-" + Math.min(9, Math.floor(Math.log(prob + 1) * 80));
-            cell.innerHTML = `<p>${i}-${j} ${prefix}</p><p class='muted'>${(prob * 100).toFixed(2)}%</p>`;
+            let hue = "inferno-" + Math.min(9, Math.floor(Math.pow(prob / maxProb, 0.3)*9.5));
+            cell.innerHTML = `<p>${i}-${j} ${prefix}</p><p class='muted'>${(prob * 100).toFixed(1)}%</p>`;
             cell.setAttribute('data-tone', hue);
             row.appendChild(cell);
         }
@@ -88,4 +91,18 @@ btnCalculate.addEventListener('click', (e) => {
 
     xGASlot.textContent = xGA.toFixed(2);
     xGBSlot.textContent = xGB.toFixed(2);
+
+    // Find most likely outcome
+    let maxProb = 0;
+    let mostLikely = { home: 0, away: 0 };
+    for (let i = 0; i < tableSize; i++) {
+        for (let j = 0; j < tableSize; j++) {
+            if (resultMatrix[i][j] > maxProb) {
+                maxProb = resultMatrix[i][j];
+                mostLikely = { home: i, away: j };
+            }
+        }
+    }
+    mostLikelyOutcome.textContent = `${mostLikely.home}-${mostLikely.away} ${mostLikely.home > mostLikely.away ? "H" : (mostLikely.home == mostLikely.away ? "D" : "A")}`;
+    mostLikelyOutcomeProbability.textContent = `${(maxProb * 100).toFixed(1)}%`;
 });

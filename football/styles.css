@@ -24,6 +24,17 @@ aside {
     display: none;
 }
 
+#score-table {
+    table-layout: fixed;
+}
+
+#score-table th,
 #score-table td {
     border: none;
+    aspect-ratio: 1 / 1;
+    text-align: center;
+}
+
+#score-table td p {
+    margin: 0.1rem;
 }
