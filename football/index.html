@@ -68,6 +68,27 @@
                         </section>
                         
                         <section>
+                            <label for="odds-over-2-5">Odds Over 2.5</label>
+                            <input
+                                type="number"
+                                step="any"
+                                name="odds-over-2-5"
+                                id="odds-over-2-5"
+                                required
+                            />
+                        </section>
+                        <section>
+                            <label for="odds-under-2-5">Odds Under 2.5</label>
+                            <input
+                                type="number"
+                                step="any"
+                                name="odds-under-2-5"
+                                id="odds-under-2-5"
+                                required
+                            />
+                        </section>
+                        
+                        <section>
                             <label for="pinnacle-url">Pinnacle URL</label>
                             <input
                                 type="url"
@@ -78,11 +99,21 @@
                         </section>
 
                         <section>
-                            <label for="home-advantage">Home Advantage</label>
+                            <label for="neutral">Neutral</label>
                             <input
                                 type="checkbox"
-                                name="home-advantage"
-                                id="home-advantage"
+                                name="neutral"
+                                id="neutral"
+                                checked
+                            />
+                        </section>
+
+                        <section>
+                            <label for="friendly">Friendly</label>
+                            <input
+                                type="checkbox"
+                                name="friendly"
+                                id="friendly"
                                 checked
                             />
                         </section>
@@ -103,6 +134,12 @@
                         <tbody>
                         </tbody>
                     </table>
+                    <div class="card">
+                        <section>
+                            <p>xG Home: <span data-slot="xGA">0</span></p>
+                            <p>xG Away: <span data-slot="xGB">0</span></p>
+                        </section>
+                    </div>
                 </aside>
             </div>
         </main>
