@@ -6,6 +6,11 @@ const xGASlot = document.querySelector('[data-slot="xGA"]');
 const xGBSlot = document.querySelector('[data-slot="xGB"]');
 const mostLikelyOutcome = document.querySelector('[data-slot="most-likely-outcome"]');
 const mostLikelyOutcomeProbability = document.querySelector('[data-slot="most-likely-outcome-probability"]');
+const slotProbWinHome = document.querySelector('[data-slot="prob-win-home"]');
+const slotProbWinDraw = document.querySelector('[data-slot="prob-win-draw"]');
+const slotProbWinAway = document.querySelector('[data-slot="prob-win-away"]');
+const slotProbWinHomeElo = document.querySelector('[data-slot="prob-win-home-elo"]');
+const slotProbWinAwayElo = document.querySelector('[data-slot="prob-win-away-elo"]');
 
 const tableSize = 7;
 function setTableValues(valuesMatrix = null) {
@@ -94,6 +99,9 @@ btnCalculate.addEventListener('click', (e) => {
 
     // Find most likely outcome
     let maxProb = 0;
+    let probWinHome = 0;
+    let probWinDraw = 0;
+    let probWinAway = 0;
     let mostLikely = { home: 0, away: 0 };
     for (let i = 0; i < tableSize; i++) {
         for (let j = 0; j < tableSize; j++) {
@@ -101,8 +109,28 @@ btnCalculate.addEventListener('click', (e) => {
                 maxProb = resultMatrix[i][j];
                 mostLikely = { home: i, away: j };
             }
+            if (i > j) {
+                probWinHome += resultMatrix[i][j];
+            } else if (i === j) {
+                probWinDraw += resultMatrix[i][j];
+            } else {
+                probWinAway += resultMatrix[i][j];
+            }
         }
     }
     mostLikelyOutcome.textContent = `${mostLikely.home}-${mostLikely.away} ${mostLikely.home > mostLikely.away ? "H" : (mostLikely.home == mostLikely.away ? "D" : "A")}`;
     mostLikelyOutcomeProbability.textContent = `${(maxProb * 100).toFixed(1)}%`;
+    slotProbWinHome.textContent = `${(probWinHome * 100).toFixed(1)}%`;
+    slotProbWinDraw.textContent = `${(probWinDraw * 100).toFixed(1)}%`;
+    slotProbWinAway.textContent = `${(probWinAway * 100).toFixed(1)}%`;
+
+    if (eloIsGiven) {
+        const adjEloA = eloTeamA + (probWinHome - probWinAway) * 20 + (isNeutral ? 0 : 100);
+        const adjEloB = eloTeamB + (probWinAway - probWinHome) * 20;
+        const eloProbA = 1 / (1 + Math.pow(10, (eloTeamB - eloTeamA) / 400));
+        const eloProbB = 1 / (1 + Math.pow(10, (eloTeamA - eloTeamB) / 400));
+        slotProbWinHomeElo.textContent = `${(eloProbA * 100).toFixed(1)}%`;
+        slotProbWinAwayElo.textContent = `${(eloProbB * 100).toFixed(1)}%`;
+    }
+
 });
