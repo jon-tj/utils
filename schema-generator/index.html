@@ -34,9 +34,29 @@
                         <p>Length: <span data-slot="num-entries">0</span></p>
                     </section>
 
-                    <section class="card">
+                    <section class="card schema-box">
                         <h3>Generated schema:</h3>
-                        <pre data-slot="schema-output">asd</pre>
+                        <pre data-slot="schema-output" class="schema-scroll">asd</pre>
+                    </section>
+
+                    <section class="card field-detail hidden" data-slot="field-detail">
+                        <h3>Field detail</h3>
+                        <div class="detail-row">
+                            <span class="detail-label">Python path:</span>
+                            <code class="copyable" data-slot="python-path"></code>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">JS path:</span>
+                            <code class="copyable" data-slot="js-path"></code>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Type:</span>
+                            <code data-slot="field-type"></code>
+                        </div>
+                        <div class="detail-row detail-values">
+                            <span class="detail-label">Values:</span>
+                            <pre data-slot="field-values" class="values-scroll"></pre>
+                        </div>
                     </section>
                 </aside>
             </div>
