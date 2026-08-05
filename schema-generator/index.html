@@ -15,7 +15,7 @@
             <div class="layout">
                 <aside>
                     <form class="card">
-                        <label for="friendly">JSON</label>
+                        <label for="friendly">Enter JSON Response</label>
                         <textarea
                             name="json"
                             id="object-input"
@@ -29,18 +29,16 @@
                     </form>
                 </aside>
                 <aside>
-                    <section class="card">
-                        <p>Depth: <span data-slot="num-depth">0</span></p>
-                        <p>Length: <span data-slot="num-entries">0</span></p>
-                    </section>
-
                     <section class="card schema-box">
-                        <h3>Generated schema:</h3>
-                        <pre data-slot="schema-output" class="schema-scroll">asd</pre>
+                        <div class="schema-header">
+                            <h3>Generated schema:</h3>
+                            <button id="btn-copy-schema" class="primary">Copy</button>
+                        </div>
+                        <pre data-slot="schema-output" class="schema-scroll">...</pre>
                     </section>
 
                     <section class="card field-detail hidden" data-slot="field-detail">
-                        <h3>Field detail</h3>
+                        <h3>Field detail:</h3>
                         <div class="detail-row">
                             <span class="detail-label">Python path:</span>
                             <code class="copyable" data-slot="python-path"></code>
@@ -48,10 +46,6 @@
                         <div class="detail-row">
                             <span class="detail-label">JS path:</span>
                             <code class="copyable" data-slot="js-path"></code>
-                        </div>
-                        <div class="detail-row">
-                            <span class="detail-label">Type:</span>
-                            <code data-slot="field-type"></code>
                         </div>
                         <div class="detail-row detail-values">
                             <span class="detail-label">Values:</span>

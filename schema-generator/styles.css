@@ -20,6 +20,16 @@ aside {
     }
 }
 
+.schema-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+h3 {
+    margin: 0;
+}
+
 .schema-scroll {
     max-height: 300px;
     overflow-y: auto;
