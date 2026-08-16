@@ -36,14 +36,28 @@ export class GraphView {
         canvas.addEventListener('mousedown', (e) => this._onMouseDown(e));
         canvas.addEventListener('mousemove', (e) => this._onMouseMove(e));
         canvas.addEventListener('click', (e) => this._onClick(e));
-        window.addEventListener('mouseup', () => (this.dragging = null));
+        canvas.addEventListener('wheel', (e) => this._onWheel(e), { passive: false });
+        window.addEventListener('mouseup', () => {
+            this.dragging = null;
+            this._panning = false;
+            this.canvas.style.cursor = 'default';
+        });
 
         // Interaction state
         this.pendingSourceId = null;
         this._downX = 0;
         this._downY = 0;
         this._wasDragged = false;
+        this._panning = false;
+        this._panStartX = 0;
+        this._panStartY = 0;
+        this._panOrigX = 0;
+        this._panOrigY = 0;
 
+        // View transform (world <-> screen)
+        this.zoom = 1;
+        this.panX = 0;
+        this.panY = 0;
         // Callbacks (set from outside)
         this.onBackgroundClick = null;   // (x, y)
         this.onNodeClick = null;         // (id, x, y)
@@ -64,6 +78,9 @@ export class GraphView {
         this.entityInfo = new Map();     // id -> entity object
 
         this.resize();
+        // Center world origin on screen so nodes near (0,0) start visible.
+        this.panX = this.width / 2;
+        this.panY = this.height / 2;
     }
 
     destroy() {
@@ -89,12 +106,13 @@ export class GraphView {
             if (!nextIds.has(id)) this.nodes.delete(id);
         }
 
-        // Add new nodes at random-ish positions near center
+        // Add new nodes at random-ish positions near the visible center (in world coords).
+        const worldCenter = this._screenToWorld(this.width / 2, this.height / 2);
         for (const e of entities) {
             if (!this.nodes.has(e.id)) {
                 this.nodes.set(e.id, {
-                    x: this.width / 2 + (Math.random() - 0.5) * 200,
-                    y: this.height / 2 + (Math.random() - 0.5) * 200,
+                    x: worldCenter.x + (Math.random() - 0.5) * 200 / this.zoom,
+                    y: worldCenter.y + (Math.random() - 0.5) * 200 / this.zoom,
                     vx: 0,
                     vy: 0,
                 });
@@ -257,28 +275,31 @@ export class GraphView {
     _applyLayout() {
         const ids = [...this.nodes.keys()].filter(id => this._isNodeVisible(id));
         if (!ids.length) return;
+        const worldCenter = this._screenToWorld(this.width / 2, this.height / 2);
+        const worldW = this.width / this.zoom;
+        const worldH = this.height / this.zoom;
         if (this.layout === 'circular') {
-            const cx = this.width / 2;
-            const cy = this.height / 2;
-            const R = Math.max(60, Math.min(this.width, this.height) / 2 - 60);
+            const R = Math.max(60, Math.min(worldW, worldH) / 2 - 60);
             ids.forEach((id, i) => {
                 const n = this.nodes.get(id);
                 const t = (i / ids.length) * Math.PI * 2 - Math.PI / 2;
-                n.x = cx + Math.cos(t) * R;
-                n.y = cy + Math.sin(t) * R;
+                n.x = worldCenter.x + Math.cos(t) * R;
+                n.y = worldCenter.y + Math.sin(t) * R;
                 n.vx = 0; n.vy = 0;
             });
         } else if (this.layout === 'grid') {
             const cols = Math.max(1, Math.ceil(Math.sqrt(ids.length)));
             const rows = Math.ceil(ids.length / cols);
-            const cellW = this.width / (cols + 1);
-            const cellH = this.height / (rows + 1);
+            const cellW = worldW / (cols + 1);
+            const cellH = worldH / (rows + 1);
+            const originX = worldCenter.x - worldW / 2;
+            const originY = worldCenter.y - worldH / 2;
             ids.forEach((id, i) => {
                 const n = this.nodes.get(id);
                 const c = i % cols;
                 const r = Math.floor(i / cols);
-                n.x = (c + 1) * cellW;
-                n.y = (r + 1) * cellH;
+                n.x = originX + (c + 1) * cellW;
+                n.y = originY + (r + 1) * cellH;
                 n.vx = 0; n.vy = 0;
             });
         }
@@ -370,10 +391,10 @@ export class GraphView {
             nb.vy -= fy;
         }
 
-        // Weak pull toward center + integrate (only for visible nodes; hidden
-        // nodes stay parked at their last position so they don't drift).
-        const cx = this.width / 2;
-        const cy = this.height / 2;
+        // Weak pull toward the world origin (fixed) so nodes don't chase the
+        // camera when the user pans.
+        const cx = 0;
+        const cy = 0;
         for (const [id, n] of this.nodes) {
             if (!this._isNodeVisible(id)) {
                 n.vx = 0;
@@ -396,7 +417,12 @@ export class GraphView {
 
     render() {
         const ctx = this.ctx;
+        // Reset to DPR-only transform to clear in physical pixels.
+        ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
         ctx.clearRect(0, 0, this.width, this.height);
+        // Apply user pan/zoom so subsequent draws use world coords.
+        ctx.translate(this.panX, this.panY);
+        ctx.scale(this.zoom, this.zoom);
 
         const nodeVisible = (id) => {
             if (this.hiddenEntityIds.has(id)) return false;
@@ -520,11 +546,12 @@ export class GraphView {
     }
 
     _nodeAt(x, y) {
+        const w = this._screenToWorld(x, y);
         for (const [id, n] of this.nodes) {
             if (this.hiddenEntityIds.has(id)) continue;
             if (this.visibleNodeIds && !this.visibleNodeIds.has(id)) continue;
-            const dx = n.x - x;
-            const dy = n.y - y;
+            const dx = n.x - w.x;
+            const dy = n.y - w.y;
             const r = this._nodeRadius(id);
             if (dx * dx + dy * dy <= r * r) return id;
         }
@@ -536,12 +563,27 @@ export class GraphView {
         return { x: e.clientX - rect.left, y: e.clientY - rect.top };
     }
 
+    _screenToWorld(x, y) {
+        return {
+            x: (x - this.panX) / this.zoom,
+            y: (y - this.panY) / this.zoom,
+        };
+    }
+
     _onMouseDown(e) {
         const { x, y } = this._relativePos(e);
         this._downX = x;
         this._downY = y;
         this._wasDragged = false;
         this.dragging = this._nodeAt(x, y);
+        if (!this.dragging) {
+            this._panning = true;
+            this._panStartX = x;
+            this._panStartY = y;
+            this._panOrigX = this.panX;
+            this._panOrigY = this.panY;
+            this.canvas.style.cursor = 'grabbing';
+        }
     }
 
     _onMouseMove(e) {
@@ -549,11 +591,18 @@ export class GraphView {
         if (this.dragging) {
             const n = this.nodes.get(this.dragging);
             if (n) {
-                n.x = x;
-                n.y = y;
+                const w = this._screenToWorld(x, y);
+                n.x = w.x;
+                n.y = w.y;
                 n.vx = 0;
                 n.vy = 0;
             }
+            if (Math.hypot(x - this._downX, y - this._downY) > 3) {
+                this._wasDragged = true;
+            }
+        } else if (this._panning) {
+            this.panX = this._panOrigX + (x - this._panStartX);
+            this.panY = this._panOrigY + (y - this._panStartY);
             if (Math.hypot(x - this._downX, y - this._downY) > 3) {
                 this._wasDragged = true;
             }
@@ -569,6 +618,18 @@ export class GraphView {
         const id = this._nodeAt(x, y);
         if (id) this.onNodeClick?.(id, x, y);
         else this.onBackgroundClick?.(x, y);
+    }
+
+    _onWheel(e) {
+        e.preventDefault();
+        const { x, y } = this._relativePos(e);
+        const before = this._screenToWorld(x, y);
+        const factor = e.deltaY > 0 ? 0.9 : 1.1;
+        const next = Math.max(0.1, Math.min(5, this.zoom * factor));
+        this.zoom = next;
+        // Keep the world point under the cursor fixed.
+        this.panX = x - before.x * this.zoom;
+        this.panY = y - before.y * this.zoom;
     }
 
     setPendingSource(id) {
