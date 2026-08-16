@@ -1,0 +1,120 @@
+body {
+    margin: 0;
+}
+body {
+    display: flex;
+    flex-direction: row;
+    height: 100vh;
+}
+
+aside.sidebar {
+    background-color: var(--color-table-background);
+    padding: 10px;
+    overflow-y: auto;
+    width: 300px;
+    flex-shrink: 0;
+    box-sizing: border-box;
+    box-shadow: 0 0 14px rgba(0, 0, 0, 0.1);
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+aside.main {
+    background-color: var(--color-card-background);
+    flex: 1;
+    position: relative;
+    overflow: auto;
+}
+
+aside.main > .tab {
+    display: block;
+}
+aside.main > .tab[hidden] {
+    display: none;
+}
+
+aside.main > section.tab,
+aside.main > table.tab {
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+aside.main form {
+    z-index: 1;
+}
+
+canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background-color: var(--color-card-background);
+}
+
+.kg-form {
+    background-color: var(--color-table-background);
+    padding: 12px;
+    border-radius: 0.5rem;
+    margin-bottom: 16px;
+}
+
+.kg-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.kg-row {
+    background-color: var(--color-table-background);
+    padding: 12px;
+    border-radius: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.kg-facts {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.flex-row {
+    flex-wrap: wrap;
+}
+
+label {
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+}
+
+input[type="text"],
+input[type="number"],
+input[type="date"],
+select {
+    padding: 0.35rem 0.5rem;
+    border: 1px solid var(--color-table-border);
+    background: #fff;
+}
+
+.kg-derived-link {
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0 0 0 4px;
+    color: var(--color-primary);
+    cursor: pointer;
+    font: inherit;
+    text-decoration: underline;
+}
+.kg-derived-link:hover {
+    color: var(--color-primary-hover);
+}
+
+.kg-highlight {
+    animation: kg-flash 1.6s ease-out;
+    outline: 2px solid var(--color-primary);
+}
+@keyframes kg-flash {
+    0% { background-color: rgba(10, 10, 205, 0.25); }
+    100% { background-color: transparent; }
+}

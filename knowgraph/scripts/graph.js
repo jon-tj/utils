@@ -1,0 +1,275 @@
+// Simple force-directed graph on a canvas.
+// Nodes are entities; edges are facts whose relation connects two entities.
+
+import { getState, getEntityName } from './store.js';
+
+const NODE_RADIUS = 22;
+const SPRING_LEN = 140;
+const SPRING_K = 0.02;
+const REPULSION = 6000;
+const DAMPING = 0.85;
+const CENTER_PULL = 0.002;
+
+export class GraphView {
+    constructor(canvas) {
+        this.canvas = canvas;
+        this.ctx = canvas.getContext('2d');
+        this.nodes = new Map(); // entityId -> { x, y, vx, vy }
+        this.edges = []; // { a, b, label }
+        this.running = false;
+        this.dpr = window.devicePixelRatio || 1;
+        this.dragging = null;
+        this.hover = null;
+
+        this._onResize = () => this.resize();
+        window.addEventListener('resize', this._onResize);
+
+        canvas.addEventListener('mousedown', (e) => this._onMouseDown(e));
+        canvas.addEventListener('mousemove', (e) => this._onMouseMove(e));
+        window.addEventListener('mouseup', () => (this.dragging = null));
+
+        this.resize();
+    }
+
+    destroy() {
+        this.stop();
+        window.removeEventListener('resize', this._onResize);
+    }
+
+    resize() {
+        const rect = this.canvas.getBoundingClientRect();
+        this.canvas.width = Math.max(1, rect.width * this.dpr);
+        this.canvas.height = Math.max(1, rect.height * this.dpr);
+        this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+        this.width = rect.width;
+        this.height = rect.height;
+    }
+
+    sync() {
+        const { entities, relations, facts } = getState();
+        const nextIds = new Set(entities.map(e => e.id));
+
+        // Remove nodes that no longer exist
+        for (const id of [...this.nodes.keys()]) {
+            if (!nextIds.has(id)) this.nodes.delete(id);
+        }
+
+        // Add new nodes at random-ish positions near center
+        for (const e of entities) {
+            if (!this.nodes.has(e.id)) {
+                this.nodes.set(e.id, {
+                    x: this.width / 2 + (Math.random() - 0.5) * 200,
+                    y: this.height / 2 + (Math.random() - 0.5) * 200,
+                    vx: 0,
+                    vy: 0,
+                });
+            }
+        }
+
+        // Build edges from entity-to-entity facts
+        this.edges = [];
+        for (const f of facts) {
+            const rel = relations.find(r => r.id === f.relationId);
+            if (!rel) continue;
+            if (rel.aType.kind !== 'entity' || rel.bType.kind !== 'entity') continue;
+            if (!this.nodes.has(f.a) || !this.nodes.has(f.b)) continue;
+            this.edges.push({ a: f.a, b: f.b, label: rel.name });
+        }
+    }
+
+    start() {
+        if (this.running) return;
+        this.running = true;
+        const loop = () => {
+            if (!this.running) return;
+            this.step();
+            this.render();
+            requestAnimationFrame(loop);
+        };
+        requestAnimationFrame(loop);
+    }
+
+    stop() {
+        this.running = false;
+    }
+
+    step() {
+        const ids = [...this.nodes.keys()];
+
+        // Repulsion between all node pairs
+        for (let i = 0; i < ids.length; i++) {
+            const na = this.nodes.get(ids[i]);
+            for (let j = i + 1; j < ids.length; j++) {
+                const nb = this.nodes.get(ids[j]);
+                let dx = nb.x - na.x;
+                let dy = nb.y - na.y;
+                let dist2 = dx * dx + dy * dy;
+                if (dist2 < 1) {
+                    dx = Math.random() - 0.5;
+                    dy = Math.random() - 0.5;
+                    dist2 = 1;
+                }
+                const dist = Math.sqrt(dist2);
+                const force = REPULSION / dist2;
+                const fx = (dx / dist) * force;
+                const fy = (dy / dist) * force;
+                na.vx -= fx;
+                na.vy -= fy;
+                nb.vx += fx;
+                nb.vy += fy;
+            }
+        }
+
+        // Spring attraction along edges
+        for (const e of this.edges) {
+            const na = this.nodes.get(e.a);
+            const nb = this.nodes.get(e.b);
+            if (!na || !nb) continue;
+            const dx = nb.x - na.x;
+            const dy = nb.y - na.y;
+            const dist = Math.sqrt(dx * dx + dy * dy) || 0.01;
+            const disp = dist - SPRING_LEN;
+            const force = SPRING_K * disp;
+            const fx = (dx / dist) * force;
+            const fy = (dy / dist) * force;
+            na.vx += fx;
+            na.vy += fy;
+            nb.vx -= fx;
+            nb.vy -= fy;
+        }
+
+        // Weak pull toward center + integrate
+        const cx = this.width / 2;
+        const cy = this.height / 2;
+        for (const [id, n] of this.nodes) {
+            if (this.dragging === id) {
+                n.vx = 0;
+                n.vy = 0;
+                continue;
+            }
+            n.vx += (cx - n.x) * CENTER_PULL;
+            n.vy += (cy - n.y) * CENTER_PULL;
+            n.vx *= DAMPING;
+            n.vy *= DAMPING;
+            n.x += n.vx;
+            n.y += n.vy;
+        }
+    }
+
+    render() {
+        const ctx = this.ctx;
+        ctx.clearRect(0, 0, this.width, this.height);
+
+        // Edges
+        ctx.strokeStyle = '#888';
+        ctx.fillStyle = '#666';
+        ctx.font = '11px sans-serif';
+        ctx.lineWidth = 1.5;
+        for (const e of this.edges) {
+            const a = this.nodes.get(e.a);
+            const b = this.nodes.get(e.b);
+            if (!a || !b) continue;
+            this._drawArrow(a.x, a.y, b.x, b.y);
+            // Label
+            const mx = (a.x + b.x) / 2;
+            const my = (a.y + b.y) / 2;
+            ctx.fillStyle = '#666';
+            ctx.textAlign = 'center';
+            ctx.fillText(e.label, mx, my - 4);
+        }
+
+        // Nodes
+        for (const [id, n] of this.nodes) {
+            const isHover = this.hover === id;
+            ctx.beginPath();
+            ctx.arc(n.x, n.y, NODE_RADIUS, 0, Math.PI * 2);
+            ctx.fillStyle = isHover ? '#000068' : '#0A0ACD';
+            ctx.fill();
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            ctx.fillStyle = '#fff';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.font = '12px sans-serif';
+            const name = getEntityName(id);
+            ctx.fillText(this._truncate(name, 8), n.x, n.y);
+        }
+    }
+
+    _drawArrow(x1, y1, x2, y2) {
+        const ctx = this.ctx;
+        const dx = x2 - x1;
+        const dy = y2 - y1;
+        const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+        const nx = dx / dist;
+        const ny = dy / dist;
+        // Shorten so we don't draw inside nodes
+        const sx = x1 + nx * NODE_RADIUS;
+        const sy = y1 + ny * NODE_RADIUS;
+        const ex = x2 - nx * NODE_RADIUS;
+        const ey = y2 - ny * NODE_RADIUS;
+
+        ctx.beginPath();
+        ctx.moveTo(sx, sy);
+        ctx.lineTo(ex, ey);
+        ctx.stroke();
+
+        // Arrowhead
+        const ah = 8;
+        const angle = Math.atan2(ny, nx);
+        ctx.beginPath();
+        ctx.moveTo(ex, ey);
+        ctx.lineTo(
+            ex - ah * Math.cos(angle - Math.PI / 6),
+            ey - ah * Math.sin(angle - Math.PI / 6)
+        );
+        ctx.lineTo(
+            ex - ah * Math.cos(angle + Math.PI / 6),
+            ey - ah * Math.sin(angle + Math.PI / 6)
+        );
+        ctx.closePath();
+        ctx.fillStyle = '#888';
+        ctx.fill();
+    }
+
+    _truncate(s, n) {
+        return s.length > n ? s.slice(0, n - 1) + '…' : s;
+    }
+
+    _nodeAt(x, y) {
+        for (const [id, n] of this.nodes) {
+            const dx = n.x - x;
+            const dy = n.y - y;
+            if (dx * dx + dy * dy <= NODE_RADIUS * NODE_RADIUS) return id;
+        }
+        return null;
+    }
+
+    _relativePos(e) {
+        const rect = this.canvas.getBoundingClientRect();
+        return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    }
+
+    _onMouseDown(e) {
+        const { x, y } = this._relativePos(e);
+        this.dragging = this._nodeAt(x, y);
+    }
+
+    _onMouseMove(e) {
+        const { x, y } = this._relativePos(e);
+        if (this.dragging) {
+            const n = this.nodes.get(this.dragging);
+            if (n) {
+                n.x = x;
+                n.y = y;
+                n.vx = 0;
+                n.vy = 0;
+            }
+        } else {
+            this.hover = this._nodeAt(x, y);
+            this.canvas.style.cursor = this.hover ? 'pointer' : 'default';
+        }
+    }
+}

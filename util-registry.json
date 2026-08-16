@@ -28,10 +28,10 @@
         "icon": "sports_soccer"
     },
     {
-        "id": "couple-expense-planner",
-        "name": "Couple Expense Planner",
-        "group": "Finance",
-        "description": "Plan and track couple expenses",
-        "icon": "partner_heart"
+        "id": "knowgraph",
+        "name": "Knowgraph",
+        "group": "Knowledge",
+        "description": "Create and query your own knowledge graph",
+        "icon": "graph_4"
     }
 ]

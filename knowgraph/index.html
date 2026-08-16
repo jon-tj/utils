@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Knowgraph</title>
+        <link href="../shared/theme.css" rel="stylesheet" />
+        <link href="styles.css" rel="stylesheet" />
+        <link rel="icon" href="../shared/favicon.png" />
+    </head>
+    <body>
+        <aside class="sidebar">
+            <button class="primary" data-tab-btn="graph" disabled>Graph</button>
+            <button class="primary transparent" data-tab-btn="table">Table</button>
+            <button class="primary transparent" data-tab-btn="entities">Entities</button>
+            <button class="primary transparent" data-tab-btn="classes">Classes</button>
+            <button class="primary transparent" data-tab-btn="relations">Relations</button>
+        </aside>
+        <aside class="main">
+            <canvas data-tab="graph" class="tab"></canvas>
+            <table data-tab="table" id="main__table" class="tab" hidden></table>
+            <section data-tab="entities" id="main__entities" class="tab" hidden></section>
+            <section data-tab="classes" id="main__classes" class="tab" hidden></section>
+            <section data-tab="relations" id="main__relations" class="tab" hidden></section>
+        </aside>
+    </body>
+    <script type="module" src="scripts/main.js" defer></script>
+</html>

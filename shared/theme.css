@@ -40,7 +40,7 @@ button.primary {
     cursor: pointer;
     transition: background-color 0.2s ease;
 }
-button.primary:hover {
+button.primary:hover:not(:disabled) {
     background-color: var(--color-primary-hover);
 }
 
@@ -50,7 +50,7 @@ button.transparent {
     border: 1px solid var(--color-primary);
 }
 
-button.transparent:hover {
+button.transparent:hover:not(:disabled) {
     background-color: var(--color-primary);
     color: var(--color-text-inversed);
 }
