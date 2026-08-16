@@ -26,7 +26,21 @@ export class GraphView {
 
         canvas.addEventListener('mousedown', (e) => this._onMouseDown(e));
         canvas.addEventListener('mousemove', (e) => this._onMouseMove(e));
+        canvas.addEventListener('click', (e) => this._onClick(e));
+        canvas.addEventListener('dblclick', (e) => this._onDblClick(e));
         window.addEventListener('mouseup', () => (this.dragging = null));
+
+        // Interaction state
+        this.pendingSourceId = null;
+        this._downX = 0;
+        this._downY = 0;
+        this._wasDragged = false;
+        this._pendingBgClickTimer = null;
+
+        // Callbacks (set from outside)
+        this.onBackgroundClick = null;   // (x, y)
+        this.onNodeClick = null;         // (id, x, y)
+        this.onNodeDoubleClick = null;   // (id, x, y)
 
         this.resize();
     }
@@ -181,12 +195,13 @@ export class GraphView {
         // Nodes
         for (const [id, n] of this.nodes) {
             const isHover = this.hover === id;
+            const isPending = this.pendingSourceId === id;
             ctx.beginPath();
             ctx.arc(n.x, n.y, NODE_RADIUS, 0, Math.PI * 2);
             ctx.fillStyle = isHover ? '#000068' : '#0A0ACD';
             ctx.fill();
-            ctx.strokeStyle = '#fff';
-            ctx.lineWidth = 2;
+            ctx.strokeStyle = isPending ? '#ff9800' : '#fff';
+            ctx.lineWidth = isPending ? 4 : 2;
             ctx.stroke();
 
             ctx.fillStyle = '#fff';
@@ -254,6 +269,9 @@ export class GraphView {
 
     _onMouseDown(e) {
         const { x, y } = this._relativePos(e);
+        this._downX = x;
+        this._downY = y;
+        this._wasDragged = false;
         this.dragging = this._nodeAt(x, y);
     }
 
@@ -267,9 +285,49 @@ export class GraphView {
                 n.vx = 0;
                 n.vy = 0;
             }
+            if (Math.hypot(x - this._downX, y - this._downY) > 3) {
+                this._wasDragged = true;
+            }
         } else {
             this.hover = this._nodeAt(x, y);
             this.canvas.style.cursor = this.hover ? 'pointer' : 'default';
         }
+    }
+
+    _onClick(e) {
+        if (this._wasDragged) return;
+        const { x, y } = this._relativePos(e);
+        const id = this._nodeAt(x, y);
+        // If we already have a pending source, act immediately.
+        if (this.pendingSourceId) {
+            if (id) this.onNodeClick?.(id, x, y);
+            else this.onBackgroundClick?.(x, y);
+            return;
+        }
+        // Node clicks without a pending source do nothing (drag / dblclick own them).
+        if (id) return;
+        // Background click: defer so a dblclick can suppress it.
+        if (this._pendingBgClickTimer) clearTimeout(this._pendingBgClickTimer);
+        this._pendingBgClickTimer = setTimeout(() => {
+            this._pendingBgClickTimer = null;
+            this.onBackgroundClick?.(x, y);
+        }, 250);
+    }
+
+    _onDblClick(e) {
+        if (this._pendingBgClickTimer) {
+            clearTimeout(this._pendingBgClickTimer);
+            this._pendingBgClickTimer = null;
+        }
+        const { x, y } = this._relativePos(e);
+        const id = this._nodeAt(x, y);
+        if (id) this.onNodeDoubleClick?.(id, x, y);
+    }
+
+    setPendingSource(id) {
+        this.pendingSourceId = id;
+    }
+    clearPendingSource() {
+        this.pendingSourceId = null;
     }
 }

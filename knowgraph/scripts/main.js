@@ -61,6 +61,42 @@ function focusFact(factId) {
 const canvas = document.querySelector('canvas[data-tab="graph"]');
 const graph = new GraphView(canvas);
 
+graph.onBackgroundClick = () => {
+    if (graph.pendingSourceId) {
+        const sourceId = graph.pendingSourceId;
+        graph.clearPendingSource();
+        openGraphModal({
+            title: 'New entity + relation',
+            needsEntity: true,
+            needsRelation: true,
+            sourceId,
+            targetId: null,
+        });
+    } else {
+        openGraphModal({
+            title: 'New entity',
+            needsEntity: true,
+            needsRelation: false,
+        });
+    }
+};
+graph.onNodeClick = (id) => {
+    if (!graph.pendingSourceId) return;
+    const sourceId = graph.pendingSourceId;
+    graph.clearPendingSource();
+    if (id === sourceId) return; // clicked the source itself → cancel
+    openGraphModal({
+        title: 'New relation',
+        needsEntity: false,
+        needsRelation: true,
+        sourceId,
+        targetId: id,
+    });
+};
+graph.onNodeDoubleClick = (id) => {
+    graph.setPendingSource(id);
+};
+
 // ---------- Rendering ----------
 
 function render() {
@@ -963,7 +999,7 @@ function columnHeader(col) {
     return col.required ? `${base} *` : base;
 }
 
-function cellValueFor(col, entity, includeDerived) {
+function cellValueFor(col, entity, includeDerived, rowOrder) {
     const { facts } = store.getState();
     if (col.relation.aType.kind !== 'entity') return '';
     const own = facts.filter(f =>
@@ -971,8 +1007,21 @@ function cellValueFor(col, entity, includeDerived) {
         && f.a === entity.id
         && (includeDerived || !f.derived)
     );
-    // Base facts first so authored values stay in slot 1.
-    own.sort((a, b) => Number(!!a.derived) - Number(!!b.derived));
+    if (col.relation.bType.kind === 'entity' && rowOrder) {
+        // Order by the B entity's position in the row list so slots align
+        // vertically across rows. Unknown Bs fall to the end. Break ties by
+        // preferring base over derived so authored values stay stable.
+        const rank = new Map(rowOrder.map((e, i) => [e.id, i]));
+        own.sort((a, b) => {
+            const ra = rank.has(a.b) ? rank.get(a.b) : Number.MAX_SAFE_INTEGER;
+            const rb = rank.has(b.b) ? rank.get(b.b) : Number.MAX_SAFE_INTEGER;
+            if (ra !== rb) return ra - rb;
+            return Number(!!a.derived) - Number(!!b.derived);
+        });
+    } else {
+        // Non-entity B: base first, otherwise keep insertion order.
+        own.sort((a, b) => Number(!!a.derived) - Number(!!b.derived));
+    }
     const f = own[col.slotIndex];
     return f ? formatValue(col.relation.bType.kind, f.b) : '';
 }
@@ -989,7 +1038,7 @@ function renderClassTable(classId) {
     const rows = rowsEntities.map((e, i) => {
         return el('tr', { class: i % 2 === 0 ? 'even' : '' }, [
             el('td', {}, e.name),
-            ...columns.map(c => el('td', {}, cellValueFor(c, e, tableIncludeDerived))),
+            ...columns.map(c => el('td', {}, cellValueFor(c, e, tableIncludeDerived, rowsEntities))),
         ]);
     });
     tableRoot.appendChild(el('tbody', {}, rows.length ? rows : [
@@ -1021,7 +1070,7 @@ function downloadCurrent() {
             ['Entity', ...columns.map(columnHeader)],
             rowsEntities.map(e => [
                 e.name,
-                ...columns.map(c => cellValueFor(c, e, tableIncludeDerived)),
+                ...columns.map(c => cellValueFor(c, e, tableIncludeDerived, rowsEntities)),
             ])
         );
     }
@@ -1044,6 +1093,152 @@ function downloadFile(name, content, mime) {
     a.click();
     a.remove();
     URL.revokeObjectURL(url);
+}
+
+// ---------- Graph modal ----------
+
+const modalEl = document.getElementById('kg-modal');
+const modalTitleEl = modalEl.querySelector('.kg-modal-title');
+const modalBodyEl = modalEl.querySelector('.kg-modal-body');
+const modalOkBtn = modalEl.querySelector('[data-modal-ok]');
+const modalCancelBtn = modalEl.querySelector('[data-modal-cancel]');
+let modalOnSubmit = null;
+
+function closeModal() {
+    modalEl.hidden = true;
+    modalOnSubmit = null;
+    clear(modalBodyEl);
+}
+modalCancelBtn.addEventListener('click', closeModal);
+modalOkBtn.addEventListener('click', () => {
+    if (!modalOnSubmit) { closeModal(); return; }
+    try {
+        const result = modalOnSubmit();
+        if (result === false) return;
+    } catch (err) {
+        alert(err.message || String(err));
+        return;
+    }
+    closeModal();
+});
+modalEl.addEventListener('click', (e) => {
+    if (e.target === modalEl) closeModal();
+});
+window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        if (!modalEl.hidden) closeModal();
+        else if (graph.pendingSourceId) graph.clearPendingSource();
+    }
+});
+
+// Compute the transitive class-id set for a given classIds list (as if it were
+// an entity), reusing store.getEntityEffectiveClassIds.
+function effectiveClassIdsFor(classIds) {
+    return store.getEntityEffectiveClassIds({ classIds });
+}
+
+function openGraphModal({ title, needsEntity, needsRelation, sourceId = null, targetId = null }) {
+    modalTitleEl.textContent = title;
+    clear(modalBodyEl);
+
+    const { classes, relations, entities } = store.getState();
+
+    // Optional entity fields
+    let nameInput = null;
+    const classCheckboxes = [];
+    if (needsEntity) {
+        nameInput = el('input', { type: 'text', placeholder: 'Entity name', required: true });
+        modalBodyEl.appendChild(el('label', {}, 'Name'));
+        modalBodyEl.appendChild(nameInput);
+
+        modalBodyEl.appendChild(el('label', {}, 'Classes'));
+        const classList = el('ul', { class: 'kg-facts' });
+        for (const c of classes) {
+            const cb = el('input', { type: 'checkbox', value: c.id });
+            classCheckboxes.push(cb);
+            classList.appendChild(el('li', {}, [el('label', {}, [cb, ' ', c.name])]));
+        }
+        if (!classes.length) {
+            classList.appendChild(el('li', { class: 'muted' }, 'No classes defined.'));
+        }
+        modalBodyEl.appendChild(classList);
+    }
+
+    // Optional relation picker
+    let relSelect = null;
+    let hint = null;
+    const rebuildRelationOptions = () => {
+        if (!relSelect) return;
+        const source = entities.find(e => e.id === sourceId);
+        if (!source) return;
+        const sourceEffective = new Set(store.getEntityEffectiveClassIds(source));
+
+        let targetEffective = new Set();
+        if (targetId) {
+            const t = entities.find(e => e.id === targetId);
+            if (t) targetEffective = new Set(store.getEntityEffectiveClassIds(t));
+        } else {
+            const picked = classCheckboxes.filter(cb => cb.checked).map(cb => cb.value);
+            targetEffective = new Set(effectiveClassIdsFor(picked));
+        }
+
+        const candidates = relations.filter(r => {
+            if (r.aType.kind !== 'entity' || r.bType.kind !== 'entity') return false;
+            if (r.aType.classId && !sourceEffective.has(r.aType.classId)) return false;
+            if (r.bType.classId && !targetEffective.has(r.bType.classId)) return false;
+            if (store.outgoingBaseCount(r.id, sourceId) >= (r.maxOutgoing ?? 1)) return false;
+            if (targetId && store.incomingBaseCount(r.id, targetId) >= (r.maxIncoming ?? 1)) return false;
+            return true;
+        });
+        const currentVal = relSelect.value;
+        relSelect.innerHTML = '';
+        relSelect.appendChild(new Option('— pick relation —', ''));
+        for (const r of candidates) {
+            const opt = new Option(`${r.name} (${formatType(r.aType)} → ${formatType(r.bType)})`, r.id);
+            if (r.id === currentVal) opt.selected = true;
+            relSelect.appendChild(opt);
+        }
+        if (hint) {
+            hint.textContent = candidates.length
+                ? ''
+                : 'No compatible relations available (check slots and class types).';
+        }
+    };
+    if (needsRelation) {
+        const source = entities.find(e => e.id === sourceId);
+        const target = targetId ? entities.find(e => e.id === targetId) : null;
+        modalBodyEl.appendChild(el('div', { class: 'muted' }, [
+            'From: ', el('strong', {}, source?.name ?? '?'),
+            ' → To: ', el('strong', {}, target?.name ?? '(new entity)'),
+        ]));
+        modalBodyEl.appendChild(el('label', {}, 'Relation'));
+        relSelect = el('select', {});
+        modalBodyEl.appendChild(relSelect);
+        hint = el('div', { class: 'muted' }, '');
+        modalBodyEl.appendChild(hint);
+        rebuildRelationOptions();
+        for (const cb of classCheckboxes) cb.addEventListener('change', rebuildRelationOptions);
+    }
+
+    modalOnSubmit = () => {
+        let newEntityId = null;
+        if (needsEntity) {
+            const name = nameInput.value.trim();
+            if (!name) { alert('Please provide a name.'); return false; }
+            const classIds = classCheckboxes.filter(cb => cb.checked).map(cb => cb.value);
+            newEntityId = store.addEntity(name, classIds).id;
+        }
+        if (needsRelation) {
+            const relId = relSelect.value;
+            if (!relId) { alert('Please pick a relation.'); return false; }
+            const finalTargetId = targetId ?? newEntityId;
+            store.addFact(relId, sourceId, finalTargetId);
+        }
+    };
+
+    modalEl.hidden = false;
+    if (nameInput) nameInput.focus();
+    else if (relSelect) relSelect.focus();
 }
 
 // ---------- Boot ----------

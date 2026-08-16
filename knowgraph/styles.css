@@ -118,3 +118,35 @@ select {
     0% { background-color: rgba(10, 10, 205, 0.25); }
     100% { background-color: transparent; }
 }
+
+.kg-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+}
+.kg-modal[hidden] {
+    display: none;
+}
+.kg-modal-card {
+    background: #fff;
+    padding: 20px;
+    border-radius: 0.7rem;
+    min-width: 320px;
+    max-width: 90vw;
+    max-height: 90vh;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+.kg-modal-title {
+    margin: 0;
+}
+.kg-modal-actions {
+    justify-content: flex-end;
+}
