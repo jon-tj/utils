@@ -7,6 +7,10 @@
         <link href="../shared/theme.css" rel="stylesheet" />
         <link href="styles.css" rel="stylesheet" />
         <link rel="icon" href="../shared/favicon.png" />
+        <link
+            rel="stylesheet"
+            href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
+        />
     </head>
     <body>
         <aside class="sidebar">
@@ -43,12 +47,25 @@
                     </div>
                     <div class="flex-col">
                         <label for="graph-query">Query</label>
-                        <input type="text" id="graph-query" placeholder="is sibling to=Mariana" />
+                        <div class="flex-row graph-query-row">
+                            <input type="text" id="graph-query" placeholder="is sibling to=Mariana" />
+                            <button
+                                type="button"
+                                id="graph-hidden-toggle"
+                                class="graph-hidden-badge"
+                                title="Show hidden entities"
+                                hidden
+                            >
+                                <span class="material-symbols-outlined">visibility_off</span>
+                                <span class="graph-hidden-count">0</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
                 <div class="graph-canvas-wrap">
                     <canvas></canvas>
                     <aside id="graph-info" class="graph-info" hidden></aside>
+                    <div id="graph-hidden-popover" class="graph-hidden-popover" hidden></div>
                 </div>
             </section>
             <table data-tab="table" id="main__table" class="tab" hidden></table>

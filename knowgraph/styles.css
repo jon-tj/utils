@@ -108,6 +108,83 @@ aside.main > section.tab[data-tab="graph"] canvas {
     align-self: flex-end;
 }
 
+.graph-info-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.graph-info-actions button {
+    text-align: left;
+    justify-content: flex-start;
+}
+
+.graph-query-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.graph-hidden-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--color-table-background);
+    border: 1px solid var(--color-table-border);
+    border-radius: 0.4rem;
+    padding: 0.25rem 0.5rem;
+    cursor: pointer;
+    color: var(--color-text-muted);
+}
+.graph-hidden-badge[hidden] {
+    display: none;
+}
+.graph-hidden-badge:hover {
+    background: #fff;
+    color: var(--color-primary);
+}
+.graph-hidden-badge .material-symbols-outlined {
+    font-size: 1.1rem;
+}
+.graph-hidden-count {
+    font-weight: 600;
+}
+
+.graph-hidden-popover {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    max-width: 320px;
+    max-height: calc(100% - 24px);
+    overflow: auto;
+    background: #fff;
+    border-radius: 0.5rem;
+    padding: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.graph-hidden-popover[hidden] {
+    display: none;
+}
+.graph-hidden-popover h4 {
+    margin: 0 0 4px 0;
+}
+.graph-hidden-popover ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.graph-hidden-popover li {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    justify-content: space-between;
+}
+
 aside.main form {
     z-index: 1;
 }

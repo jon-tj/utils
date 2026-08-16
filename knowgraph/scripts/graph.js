@@ -53,6 +53,7 @@ export class GraphView {
         this.colorBy = 'class';          // 'class' | 'relation'
         this.sizeBy = 'degree';          // 'degree' | 'centrality'
         this.query = '';                 // e.g. 'is sibling to=Mariana'
+        this.hiddenEntityIds = new Set();
 
         // Derived per sync()
         this.degree = new Map();
@@ -251,6 +252,7 @@ export class GraphView {
     setColorBy(mode) { this.colorBy = mode; }
     setSizeBy(mode) { this.sizeBy = mode; }
     setQuery(q) { this.query = q; this._applyQuery(); }
+    setHiddenEntities(set) { this.hiddenEntityIds = set instanceof Set ? set : new Set(set); }
 
     start() {
         if (this.running) return;
@@ -336,7 +338,11 @@ export class GraphView {
         const ctx = this.ctx;
         ctx.clearRect(0, 0, this.width, this.height);
 
-        const nodeVisible = (id) => !this.visibleNodeIds || this.visibleNodeIds.has(id);
+        const nodeVisible = (id) => {
+            if (this.hiddenEntityIds.has(id)) return false;
+            if (this.visibleNodeIds && !this.visibleNodeIds.has(id)) return false;
+            return true;
+        };
 
         // Edges
         ctx.font = '11px sans-serif';
@@ -454,6 +460,7 @@ export class GraphView {
 
     _nodeAt(x, y) {
         for (const [id, n] of this.nodes) {
+            if (this.hiddenEntityIds.has(id)) continue;
             if (this.visibleNodeIds && !this.visibleNodeIds.has(id)) continue;
             const dx = n.x - x;
             const dy = n.y - y;

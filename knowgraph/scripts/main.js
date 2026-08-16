@@ -1136,6 +1136,156 @@ function downloadFile(name, content, mime) {
 const graphInfoEl = document.getElementById('graph-info');
 let selectedEntityId = null;
 
+// ---------- Hidden entities / classes ----------
+
+const HIDDEN_STORAGE_KEY = 'knowgraph:v1:hidden';
+let hiddenState = { entities: [], classes: [] };
+try {
+    const raw = localStorage.getItem(HIDDEN_STORAGE_KEY);
+    if (raw) {
+        const parsed = JSON.parse(raw);
+        hiddenState = {
+            entities: Array.isArray(parsed.entities) ? parsed.entities : [],
+            classes: Array.isArray(parsed.classes) ? parsed.classes : [],
+        };
+    }
+} catch { /* ignore */ }
+
+function persistHidden() {
+    localStorage.setItem(HIDDEN_STORAGE_KEY, JSON.stringify(hiddenState));
+}
+
+function computeHiddenEntitySet() {
+    const { entities } = store.getState();
+    const set = new Set(hiddenState.entities);
+    const hiddenClassSet = new Set(hiddenState.classes);
+    if (hiddenClassSet.size) {
+        for (const e of entities) {
+            for (const cid of hiddenClassSet) {
+                if (store.entityMatchesClass(e, cid)) {
+                    set.add(e.id);
+                    break;
+                }
+            }
+        }
+    }
+    // Drop ids that no longer exist to keep the badge count honest.
+    const existingIds = new Set(entities.map(e => e.id));
+    hiddenState.entities = hiddenState.entities.filter(id => existingIds.has(id));
+    const existingClassIds = new Set(store.getState().classes.map(c => c.id));
+    hiddenState.classes = hiddenState.classes.filter(id => existingClassIds.has(id));
+    return set;
+}
+
+const hiddenBadge = document.getElementById('graph-hidden-toggle');
+const hiddenPopover = document.getElementById('graph-hidden-popover');
+const hiddenCountEl = hiddenBadge.querySelector('.graph-hidden-count');
+
+function refreshHiddenBadge() {
+    const total = hiddenState.entities.length + hiddenState.classes.length;
+    if (!total) {
+        hiddenBadge.hidden = true;
+        hiddenPopover.hidden = true;
+    } else {
+        hiddenBadge.hidden = false;
+        hiddenCountEl.textContent = String(total);
+    }
+    renderHiddenPopover();
+}
+
+function applyHidden() {
+    graph.setHiddenEntities(computeHiddenEntitySet());
+    persistHidden();
+    refreshHiddenBadge();
+    // If the currently selected entity became hidden, close its info panel.
+    if (selectedEntityId && graph.hiddenEntityIds.has(selectedEntityId)) {
+        graph.clearPendingSource();
+        hideEntityInfo();
+    }
+}
+
+function hideEntity(id) {
+    if (!hiddenState.entities.includes(id)) hiddenState.entities.push(id);
+    applyHidden();
+}
+function hideClass(id) {
+    if (!hiddenState.classes.includes(id)) hiddenState.classes.push(id);
+    applyHidden();
+}
+function unhideEntity(id) {
+    hiddenState.entities = hiddenState.entities.filter(x => x !== id);
+    applyHidden();
+}
+function unhideClass(id) {
+    hiddenState.classes = hiddenState.classes.filter(x => x !== id);
+    applyHidden();
+}
+function unhideAll() {
+    hiddenState.entities = [];
+    hiddenState.classes = [];
+    applyHidden();
+}
+
+function renderHiddenPopover() {
+    clear(hiddenPopover);
+    if (!hiddenState.entities.length && !hiddenState.classes.length) return;
+    hiddenPopover.appendChild(el('h4', {}, 'Hidden'));
+    if (hiddenState.classes.length) {
+        const list = el('ul', {});
+        for (const cid of hiddenState.classes) {
+            const name = store.getClassName(cid);
+            list.appendChild(el('li', {}, [
+                el('span', {}, `All ${name}`),
+                el('button', {
+                    class: 'primary transparent',
+                    onClick: () => unhideClass(cid),
+                }, 'Show'),
+            ]));
+        }
+        hiddenPopover.appendChild(el('div', {}, [
+            el('span', { class: 'muted' }, 'Classes'),
+            list,
+        ]));
+    }
+    if (hiddenState.entities.length) {
+        const list = el('ul', {});
+        for (const eid of hiddenState.entities) {
+            const name = store.getEntityName(eid);
+            list.appendChild(el('li', {}, [
+                el('span', {}, name),
+                el('button', {
+                    class: 'primary transparent',
+                    onClick: () => unhideEntity(eid),
+                }, 'Show'),
+            ]));
+        }
+        hiddenPopover.appendChild(el('div', {}, [
+            el('span', { class: 'muted' }, 'Entities'),
+            list,
+        ]));
+    }
+    hiddenPopover.appendChild(el('button', {
+        class: 'primary transparent',
+        onClick: () => unhideAll(),
+    }, 'Show all'));
+}
+
+hiddenBadge.addEventListener('click', () => {
+    hiddenPopover.hidden = !hiddenPopover.hidden;
+});
+document.addEventListener('click', (e) => {
+    if (hiddenPopover.hidden) return;
+    if (hiddenPopover.contains(e.target)) return;
+    if (hiddenBadge.contains(e.target)) return;
+    hiddenPopover.hidden = true;
+});
+
+// Recompute hidden set whenever the graph store changes (entities/classes
+// may have appeared, been deleted, or class membership may have shifted).
+store.subscribe(() => applyHidden());
+// Prime the initial state.
+applyHidden();
+
 function hideEntityInfo() {
     selectedEntityId = null;
     graphInfoEl.hidden = true;
@@ -1177,6 +1327,19 @@ function renderEntityInfo() {
     if (classNames.length) {
         graphInfoEl.appendChild(el('div', { class: 'muted' }, `Classes: ${classNames.join(', ')}`));
     }
+
+    // Hide actions
+    const actions = el('div', { class: 'graph-info-actions' }, [
+        el('button', {
+            class: 'primary transparent',
+            onClick: () => hideEntity(entity.id),
+        }, `Hide ${entity.name}`),
+        ...entity.classIds.map(cid => el('button', {
+            class: 'primary transparent',
+            onClick: () => hideClass(cid),
+        }, `Hide all ${store.getClassName(cid)}`)),
+    ]);
+    graphInfoEl.appendChild(actions);
 
     const valueFacts = [];
     const outgoing = [];
