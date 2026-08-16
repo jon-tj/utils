@@ -54,6 +54,7 @@ export class GraphView {
         this.sizeBy = 'degree';          // 'degree' | 'centrality'
         this.query = '';                 // e.g. 'is sibling to=Mariana'
         this.hiddenEntityIds = new Set();
+        this.hiddenRelationIds = new Set();
 
         // Derived per sync()
         this.degree = new Map();
@@ -154,42 +155,44 @@ export class GraphView {
         if (!raw) return;
         const { relations, entities, facts, classes } = getState();
 
-        // Form 1: relationName=entityName
+        // Form 1: relationName=entityName (substring match on both sides).
         const m = /^(.+?)\s*=\s*(.+)$/.exec(raw);
         if (m) {
             const relQ = m[1].trim().toLowerCase();
             const entQ = m[2].trim().toLowerCase();
-            const rel = relations.find(r => r.name.toLowerCase() === relQ);
-            const ent = entities.find(e => e.name.toLowerCase() === entQ);
-            if (!rel || !ent) {
+            const rels = relations.filter(r => r.name.toLowerCase().includes(relQ));
+            const ents = entities.filter(e => e.name.toLowerCase().includes(entQ));
+            if (!rels.length || !ents.length) {
                 this.visibleNodeIds = new Set();
                 this.visibleEdgeFilter = () => false;
                 return;
             }
-            const visible = new Set([ent.id]);
+            const relIds = new Set(rels.map(r => r.id));
+            const entIds = new Set(ents.map(e => e.id));
+            const visible = new Set(entIds);
             for (const f of facts) {
-                if (f.relationId !== rel.id) continue;
-                if (f.a !== ent.id && f.b !== ent.id) continue;
+                if (!relIds.has(f.relationId)) continue;
+                if (!entIds.has(f.a) && !entIds.has(f.b)) continue;
                 visible.add(f.a);
                 visible.add(f.b);
             }
             this.visibleNodeIds = visible;
             this.visibleEdgeFilter = (edge) =>
-                edge.relationId === rel.id
-                && (edge.a === ent.id || edge.b === ent.id);
+                relIds.has(edge.relationId)
+                && (entIds.has(edge.a) || entIds.has(edge.b));
             return;
         }
 
-        // Form 2: bare entity name (case-insensitive). Prefer entity matches;
-        // if none, fall through to class matching.
+        // Form 2: substring on entity names. Prefer entities; if none, fall
+        // through to classes; if none, fall through to relations.
         const q = raw.toLowerCase();
         let targetIds = new Set(
-            entities.filter(e => e.name.toLowerCase() === q).map(e => e.id)
+            entities.filter(e => e.name.toLowerCase().includes(q)).map(e => e.id),
         );
-        // Form 3: class name (matches all entities of that class, including
-        // subclasses via inheritance).
+
+        // Form 3: substring on class name — collect all entities in those classes.
         if (!targetIds.size) {
-            const matchedClasses = classes.filter(c => c.name.toLowerCase() === q);
+            const matchedClasses = classes.filter(c => c.name.toLowerCase().includes(q));
             if (matchedClasses.length) {
                 for (const e of entities) {
                     if (matchedClasses.some(c => entityMatchesClass(e, c.id))) {
@@ -198,6 +201,25 @@ export class GraphView {
                 }
             }
         }
+
+        // Form 4: substring on relation name — show every entity pair connected
+        // by any matching relation.
+        if (!targetIds.size) {
+            const matchedRelations = relations.filter(r => r.name.toLowerCase().includes(q));
+            if (matchedRelations.length) {
+                const relIds = new Set(matchedRelations.map(r => r.id));
+                const visible = new Set();
+                for (const f of facts) {
+                    if (!relIds.has(f.relationId)) continue;
+                    visible.add(f.a);
+                    visible.add(f.b);
+                }
+                this.visibleNodeIds = visible;
+                this.visibleEdgeFilter = (edge) => relIds.has(edge.relationId);
+                return;
+            }
+        }
+
         if (!targetIds.size) {
             this.visibleNodeIds = new Set();
             this.visibleEdgeFilter = () => false;
@@ -253,6 +275,7 @@ export class GraphView {
     setSizeBy(mode) { this.sizeBy = mode; }
     setQuery(q) { this.query = q; this._applyQuery(); }
     setHiddenEntities(set) { this.hiddenEntityIds = set instanceof Set ? set : new Set(set); }
+    setHiddenRelations(set) { this.hiddenRelationIds = set instanceof Set ? set : new Set(set); }
 
     start() {
         if (this.running) return;
@@ -347,6 +370,7 @@ export class GraphView {
         // Edges
         ctx.font = '11px sans-serif';
         for (const e of this.edges) {
+            if (this.hiddenRelationIds.has(e.relationId)) continue;
             if (this.visibleEdgeFilter && !this.visibleEdgeFilter(e)) continue;
             if (!nodeVisible(e.a) || !nodeVisible(e.b)) continue;
             const a = this.nodes.get(e.a);
