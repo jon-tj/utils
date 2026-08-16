@@ -29,7 +29,7 @@ export function uid() {
 
 function clampSlot(n) {
     n = Math.floor(Number(n));
-    if (!Number.isFinite(n) || n < 1) return 1;
+    if (!Number.isFinite(n) || n < 0) return 0;
     if (n > 10) return 10;
     return n;
 }

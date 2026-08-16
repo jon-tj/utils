@@ -1,7 +1,7 @@
 // Simple force-directed graph on a canvas.
 // Nodes are entities; edges are facts whose relation connects two entities.
 
-import { getState, getEntityName } from './store.js';
+import { getState, getEntityName, entityMatchesClass } from './store.js';
 
 const NODE_RADIUS = 22;
 const SPRING_LEN = 140;
@@ -9,6 +9,15 @@ const SPRING_K = 0.02;
 const REPULSION = 6000;
 const DAMPING = 0.85;
 const CENTER_PULL = 0.002;
+
+// Deterministic hue from any id string.
+function hashHue(str) {
+    let h = 0;
+    for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) >>> 0;
+    return h % 360;
+}
+function classColor(id) { return `hsl(${hashHue(id)}, 65%, 45%)`; }
+function relationColor(id) { return `hsl(${hashHue(id)}, 60%, 40%)`; }
 
 export class GraphView {
     constructor(canvas) {
@@ -27,7 +36,6 @@ export class GraphView {
         canvas.addEventListener('mousedown', (e) => this._onMouseDown(e));
         canvas.addEventListener('mousemove', (e) => this._onMouseMove(e));
         canvas.addEventListener('click', (e) => this._onClick(e));
-        canvas.addEventListener('dblclick', (e) => this._onDblClick(e));
         window.addEventListener('mouseup', () => (this.dragging = null));
 
         // Interaction state
@@ -35,12 +43,23 @@ export class GraphView {
         this._downX = 0;
         this._downY = 0;
         this._wasDragged = false;
-        this._pendingBgClickTimer = null;
 
         // Callbacks (set from outside)
         this.onBackgroundClick = null;   // (x, y)
         this.onNodeClick = null;         // (id, x, y)
-        this.onNodeDoubleClick = null;   // (id, x, y)
+
+        // View options
+        this.layout = 'force';           // 'force' | 'circular' | 'grid'
+        this.colorBy = 'class';          // 'class' | 'relation'
+        this.sizeBy = 'degree';          // 'degree' | 'centrality'
+        this.query = '';                 // e.g. 'is sibling to=Mariana'
+
+        // Derived per sync()
+        this.degree = new Map();
+        this.closeness = new Map();
+        this.visibleNodeIds = null;      // null = all visible
+        this.visibleEdgeFilter = null;   // (edge) => bool, or null
+        this.entityInfo = new Map();     // id -> entity object
 
         this.resize();
     }
@@ -87,9 +106,151 @@ export class GraphView {
             if (!rel) continue;
             if (rel.aType.kind !== 'entity' || rel.bType.kind !== 'entity') continue;
             if (!this.nodes.has(f.a) || !this.nodes.has(f.b)) continue;
-            this.edges.push({ a: f.a, b: f.b, label: rel.name });
+            this.edges.push({ a: f.a, b: f.b, label: rel.name, relationId: rel.id });
+        }
+
+        // Cache entity info for coloring.
+        this.entityInfo = new Map(entities.map(e => [e.id, e]));
+
+        this._computeMetrics();
+        this._applyQuery();
+        if (this.layout !== 'force') this._applyLayout();
+    }
+
+    _computeMetrics() {
+        const ids = [...this.nodes.keys()];
+        const adj = new Map(ids.map(id => [id, new Set()]));
+        for (const e of this.edges) {
+            adj.get(e.a)?.add(e.b);
+            adj.get(e.b)?.add(e.a);
+        }
+        this.degree = new Map(ids.map(id => [id, adj.get(id).size]));
+        this.closeness = new Map();
+        for (const s of ids) {
+            const dist = new Map([[s, 0]]);
+            const queue = [s];
+            while (queue.length) {
+                const cur = queue.shift();
+                const d = dist.get(cur);
+                for (const nb of adj.get(cur)) {
+                    if (!dist.has(nb)) {
+                        dist.set(nb, d + 1);
+                        queue.push(nb);
+                    }
+                }
+            }
+            let sum = 0;
+            for (const [id, d] of dist) if (id !== s) sum += d;
+            const reachable = dist.size - 1;
+            this.closeness.set(s, sum > 0 ? reachable / sum : 0);
         }
     }
+
+    _applyQuery() {
+        this.visibleNodeIds = null;
+        this.visibleEdgeFilter = null;
+        const raw = (this.query || '').trim();
+        if (!raw) return;
+        const { relations, entities, facts, classes } = getState();
+
+        // Form 1: relationName=entityName
+        const m = /^(.+?)\s*=\s*(.+)$/.exec(raw);
+        if (m) {
+            const relQ = m[1].trim().toLowerCase();
+            const entQ = m[2].trim().toLowerCase();
+            const rel = relations.find(r => r.name.toLowerCase() === relQ);
+            const ent = entities.find(e => e.name.toLowerCase() === entQ);
+            if (!rel || !ent) {
+                this.visibleNodeIds = new Set();
+                this.visibleEdgeFilter = () => false;
+                return;
+            }
+            const visible = new Set([ent.id]);
+            for (const f of facts) {
+                if (f.relationId !== rel.id) continue;
+                if (f.a !== ent.id && f.b !== ent.id) continue;
+                visible.add(f.a);
+                visible.add(f.b);
+            }
+            this.visibleNodeIds = visible;
+            this.visibleEdgeFilter = (edge) =>
+                edge.relationId === rel.id
+                && (edge.a === ent.id || edge.b === ent.id);
+            return;
+        }
+
+        // Form 2: bare entity name (case-insensitive). Prefer entity matches;
+        // if none, fall through to class matching.
+        const q = raw.toLowerCase();
+        let targetIds = new Set(
+            entities.filter(e => e.name.toLowerCase() === q).map(e => e.id)
+        );
+        // Form 3: class name (matches all entities of that class, including
+        // subclasses via inheritance).
+        if (!targetIds.size) {
+            const matchedClasses = classes.filter(c => c.name.toLowerCase() === q);
+            if (matchedClasses.length) {
+                for (const e of entities) {
+                    if (matchedClasses.some(c => entityMatchesClass(e, c.id))) {
+                        targetIds.add(e.id);
+                    }
+                }
+            }
+        }
+        if (!targetIds.size) {
+            this.visibleNodeIds = new Set();
+            this.visibleEdgeFilter = () => false;
+            return;
+        }
+
+        // Include direct neighbors via any relation, any direction.
+        const visible = new Set(targetIds);
+        for (const f of facts) {
+            if (targetIds.has(f.a)) visible.add(f.b);
+            if (targetIds.has(f.b)) visible.add(f.a);
+        }
+        this.visibleNodeIds = visible;
+        this.visibleEdgeFilter = (edge) =>
+            targetIds.has(edge.a) || targetIds.has(edge.b);
+    }
+
+    _applyLayout() {
+        const ids = [...this.nodes.keys()];
+        if (!ids.length) return;
+        if (this.layout === 'circular') {
+            const cx = this.width / 2;
+            const cy = this.height / 2;
+            const R = Math.max(60, Math.min(this.width, this.height) / 2 - 60);
+            ids.forEach((id, i) => {
+                const n = this.nodes.get(id);
+                const t = (i / ids.length) * Math.PI * 2 - Math.PI / 2;
+                n.x = cx + Math.cos(t) * R;
+                n.y = cy + Math.sin(t) * R;
+                n.vx = 0; n.vy = 0;
+            });
+        } else if (this.layout === 'grid') {
+            const cols = Math.max(1, Math.ceil(Math.sqrt(ids.length)));
+            const rows = Math.ceil(ids.length / cols);
+            const cellW = this.width / (cols + 1);
+            const cellH = this.height / (rows + 1);
+            ids.forEach((id, i) => {
+                const n = this.nodes.get(id);
+                const c = i % cols;
+                const r = Math.floor(i / cols);
+                n.x = (c + 1) * cellW;
+                n.y = (r + 1) * cellH;
+                n.vx = 0; n.vy = 0;
+            });
+        }
+    }
+
+    setLayout(mode) {
+        this.layout = mode;
+        if (mode !== 'force') this._applyLayout();
+    }
+    setColorBy(mode) { this.colorBy = mode; }
+    setSizeBy(mode) { this.sizeBy = mode; }
+    setQuery(q) { this.query = q; this._applyQuery(); }
 
     start() {
         if (this.running) return;
@@ -108,6 +269,7 @@ export class GraphView {
     }
 
     step() {
+        if (this.layout !== 'force') return;
         const ids = [...this.nodes.keys()];
 
         // Repulsion between all node pairs
@@ -174,31 +336,37 @@ export class GraphView {
         const ctx = this.ctx;
         ctx.clearRect(0, 0, this.width, this.height);
 
+        const nodeVisible = (id) => !this.visibleNodeIds || this.visibleNodeIds.has(id);
+
         // Edges
-        ctx.strokeStyle = '#888';
-        ctx.fillStyle = '#666';
         ctx.font = '11px sans-serif';
-        ctx.lineWidth = 1.5;
         for (const e of this.edges) {
+            if (this.visibleEdgeFilter && !this.visibleEdgeFilter(e)) continue;
+            if (!nodeVisible(e.a) || !nodeVisible(e.b)) continue;
             const a = this.nodes.get(e.a);
             const b = this.nodes.get(e.b);
             if (!a || !b) continue;
-            this._drawArrow(a.x, a.y, b.x, b.y);
-            // Label
+            const edgeColor = this.colorBy === 'relation' ? relationColor(e.relationId) : '#888';
+            const rA = this._nodeRadius(e.a);
+            const rB = this._nodeRadius(e.b);
+            this._drawArrow(a.x, a.y, b.x, b.y, rA, rB, edgeColor);
             const mx = (a.x + b.x) / 2;
             const my = (a.y + b.y) / 2;
-            ctx.fillStyle = '#666';
+            ctx.fillStyle = edgeColor;
             ctx.textAlign = 'center';
             ctx.fillText(e.label, mx, my - 4);
         }
 
         // Nodes
         for (const [id, n] of this.nodes) {
+            if (!nodeVisible(id)) continue;
             const isHover = this.hover === id;
             const isPending = this.pendingSourceId === id;
+            const r = this._nodeRadius(id);
+            const fillBase = this._nodeFill(id);
             ctx.beginPath();
-            ctx.arc(n.x, n.y, NODE_RADIUS, 0, Math.PI * 2);
-            ctx.fillStyle = isHover ? '#000068' : '#0A0ACD';
+            ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
+            ctx.fillStyle = isHover ? this._darken(fillBase) : fillBase;
             ctx.fill();
             ctx.strokeStyle = isPending ? '#ff9800' : '#fff';
             ctx.lineWidth = isPending ? 4 : 2;
@@ -209,29 +377,60 @@ export class GraphView {
             ctx.textBaseline = 'middle';
             ctx.font = '12px sans-serif';
             const name = getEntityName(id);
-            ctx.fillText(this._truncate(name, 8), n.x, n.y);
+            ctx.fillText(this._truncate(name, 10), n.x, n.y);
         }
     }
 
-    _drawArrow(x1, y1, x2, y2) {
+    _nodeRadius(id) {
+        if (this.sizeBy === 'degree') {
+            const d = this.degree.get(id) ?? 0;
+            return NODE_RADIUS + Math.min(20, d * 2);
+        }
+        if (this.sizeBy === 'centrality') {
+            const c = this.closeness.get(id) ?? 0;
+            return NODE_RADIUS + Math.min(20, c * 30);
+        }
+        return NODE_RADIUS;
+    }
+
+    _nodeFill(id) {
+        if (this.colorBy === 'class') {
+            const ent = this.entityInfo.get(id);
+            if (ent && ent.classIds && ent.classIds.length) {
+                return classColor(ent.classIds[0]);
+            }
+        }
+        return '#0A0ACD';
+    }
+
+    _darken(color) {
+        // For hsl(...) shift lightness down; fall back to a fixed dark blue.
+        const m = /^hsl\((\d+),\s*(\d+)%,\s*(\d+)%\)$/.exec(color);
+        if (m) return `hsl(${m[1]}, ${m[2]}%, ${Math.max(20, +m[3] - 15)}%)`;
+        return '#000068';
+    }
+
+    _drawArrow(x1, y1, x2, y2, rA, rB, color) {
         const ctx = this.ctx;
         const dx = x2 - x1;
         const dy = y2 - y1;
         const dist = Math.sqrt(dx * dx + dy * dy) || 1;
         const nx = dx / dist;
         const ny = dy / dist;
-        // Shorten so we don't draw inside nodes
-        const sx = x1 + nx * NODE_RADIUS;
-        const sy = y1 + ny * NODE_RADIUS;
-        const ex = x2 - nx * NODE_RADIUS;
-        const ey = y2 - ny * NODE_RADIUS;
+        const startR = rA ?? NODE_RADIUS;
+        const endR = rB ?? NODE_RADIUS;
+        const sx = x1 + nx * startR;
+        const sy = y1 + ny * startR;
+        const ex = x2 - nx * endR;
+        const ey = y2 - ny * endR;
 
+        ctx.strokeStyle = color || '#888';
+        ctx.lineWidth = 1.5;
         ctx.beginPath();
         ctx.moveTo(sx, sy);
         ctx.lineTo(ex, ey);
         ctx.stroke();
 
-        // Arrowhead
         const ah = 8;
         const angle = Math.atan2(ny, nx);
         ctx.beginPath();
@@ -245,7 +444,7 @@ export class GraphView {
             ey - ah * Math.sin(angle + Math.PI / 6)
         );
         ctx.closePath();
-        ctx.fillStyle = '#888';
+        ctx.fillStyle = color || '#888';
         ctx.fill();
     }
 
@@ -255,9 +454,11 @@ export class GraphView {
 
     _nodeAt(x, y) {
         for (const [id, n] of this.nodes) {
+            if (this.visibleNodeIds && !this.visibleNodeIds.has(id)) continue;
             const dx = n.x - x;
             const dy = n.y - y;
-            if (dx * dx + dy * dy <= NODE_RADIUS * NODE_RADIUS) return id;
+            const r = this._nodeRadius(id);
+            if (dx * dx + dy * dy <= r * r) return id;
         }
         return null;
     }
@@ -298,30 +499,8 @@ export class GraphView {
         if (this._wasDragged) return;
         const { x, y } = this._relativePos(e);
         const id = this._nodeAt(x, y);
-        // If we already have a pending source, act immediately.
-        if (this.pendingSourceId) {
-            if (id) this.onNodeClick?.(id, x, y);
-            else this.onBackgroundClick?.(x, y);
-            return;
-        }
-        // Node clicks without a pending source do nothing (drag / dblclick own them).
-        if (id) return;
-        // Background click: defer so a dblclick can suppress it.
-        if (this._pendingBgClickTimer) clearTimeout(this._pendingBgClickTimer);
-        this._pendingBgClickTimer = setTimeout(() => {
-            this._pendingBgClickTimer = null;
-            this.onBackgroundClick?.(x, y);
-        }, 250);
-    }
-
-    _onDblClick(e) {
-        if (this._pendingBgClickTimer) {
-            clearTimeout(this._pendingBgClickTimer);
-            this._pendingBgClickTimer = null;
-        }
-        const { x, y } = this._relativePos(e);
-        const id = this._nodeAt(x, y);
-        if (id) this.onNodeDoubleClick?.(id, x, y);
+        if (id) this.onNodeClick?.(id, x, y);
+        else this.onBackgroundClick?.(x, y);
     }
 
     setPendingSource(id) {

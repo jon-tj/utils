@@ -58,13 +58,14 @@ function focusFact(factId) {
 
 // ---------- Graph ----------
 
-const canvas = document.querySelector('canvas[data-tab="graph"]');
+const canvas = document.querySelector('section[data-tab="graph"] canvas');
 const graph = new GraphView(canvas);
 
 graph.onBackgroundClick = () => {
     if (graph.pendingSourceId) {
         const sourceId = graph.pendingSourceId;
         graph.clearPendingSource();
+        hideEntityInfo();
         openGraphModal({
             title: 'New entity + relation',
             needsEntity: true,
@@ -81,21 +82,52 @@ graph.onBackgroundClick = () => {
     }
 };
 graph.onNodeClick = (id) => {
-    if (!graph.pendingSourceId) return;
-    const sourceId = graph.pendingSourceId;
-    graph.clearPendingSource();
-    if (id === sourceId) return; // clicked the source itself → cancel
-    openGraphModal({
-        title: 'New relation',
-        needsEntity: false,
-        needsRelation: true,
-        sourceId,
-        targetId: id,
-    });
-};
-graph.onNodeDoubleClick = (id) => {
+    // Clicking the currently-selected node deselects it.
+    if (graph.pendingSourceId === id) {
+        graph.clearPendingSource();
+        hideEntityInfo();
+        return;
+    }
+    // Clicking a different node while one is selected opens the fact modal.
+    if (graph.pendingSourceId) {
+        const sourceId = graph.pendingSourceId;
+        graph.clearPendingSource();
+        hideEntityInfo();
+        openGraphModal({
+            title: 'New relation',
+            needsEntity: false,
+            needsRelation: true,
+            sourceId,
+            targetId: id,
+        });
+        return;
+    }
+    // No selection yet: select this entity.
     graph.setPendingSource(id);
+    showEntityInfo(id);
 };
+
+// Graph toolbar controls.
+const graphLayoutSel = document.getElementById('graph-layout');
+const graphColorSel = document.getElementById('graph-color');
+const graphSizeSel = document.getElementById('graph-size');
+const graphQueryInput = document.getElementById('graph-query');
+if (graphLayoutSel) {
+    graph.setLayout(graphLayoutSel.value);
+    graphLayoutSel.addEventListener('change', () => graph.setLayout(graphLayoutSel.value));
+}
+if (graphColorSel) {
+    graph.setColorBy(graphColorSel.value);
+    graphColorSel.addEventListener('change', () => graph.setColorBy(graphColorSel.value));
+}
+if (graphSizeSel) {
+    graph.setSizeBy(graphSizeSel.value);
+    graphSizeSel.addEventListener('change', () => graph.setSizeBy(graphSizeSel.value));
+}
+if (graphQueryInput) {
+    graph.setQuery(graphQueryInput.value);
+    graphQueryInput.addEventListener('input', () => graph.setQuery(graphQueryInput.value));
+}
 
 // ---------- Rendering ----------
 
@@ -300,15 +332,17 @@ function renderEntityFacts(entity, relations, facts) {
         const sel = document.createElement('select');
         sel.appendChild(new Option('— entity —', ''));
         const maxIn = rel.maxIncoming ?? 1;
+        const incomingCapped = maxIn > 0;
         for (const en of entities) {
             if (en.id === entity.id) continue;
             if (rel.bType.classId && !store.entityMatchesClass(en, rel.bType.classId)) continue;
             const isCurrent = currentValue === en.id;
             if (excludeAsUsed.has(en.id) && !isCurrent) continue;
-            const incoming = store.incomingBaseCount(rel.id, en.id);
-            // The current value is already using a slot for this entity's own fact,
-            // so it should still be selectable; a change simply moves the slot.
-            if (incoming >= maxIn && !isCurrent) continue;
+            if (incomingCapped) {
+                const incoming = store.incomingBaseCount(rel.id, en.id);
+                // Current value already uses a slot; keep it selectable.
+                if (incoming >= maxIn && !isCurrent) continue;
+            }
             const opt = new Option(en.name, en.id);
             if (isCurrent) opt.selected = true;
             sel.appendChild(opt);
@@ -361,21 +395,21 @@ function renderEntityFacts(entity, relations, facts) {
                 ]));
             }
 
-            // Empty add-slot if there's remaining capacity.
-            if (baseFacts.length < maxOut) {
+            // Empty add-slot if there's remaining capacity (max=0 means unlimited).
+            if (maxOut === 0 || baseFacts.length < maxOut) {
                 const sel = buildEntityBSelect(rel, null, usedBIds);
                 sel.addEventListener('change', () => {
                     if (!sel.value) return;
                     store.addFact(rel.id, entity.id, sel.value);
                 });
                 const remaining = maxOut - baseFacts.length;
+                const hint = maxOut === 0
+                    ? '(add \u2014 unlimited)'
+                    : `(add \u2014 ${remaining} slot${remaining === 1 ? '' : 's'} left)`;
                 classRelList.appendChild(el('li', {}, [
-                    label(`(add — ${remaining} slot${remaining === 1 ? '' : 's'} left)`),
+                    label(hint),
                     sel,
                 ]));
-            } else if (!baseFacts.length && !derivedForRel.length) {
-                // maxOut === 0 shouldn't happen, but keep placeholder for empty state.
-                classRelList.appendChild(el('li', {}, [label(''), el('span', { class: 'muted' }, '(no slots)')]));
             }
             continue;
         }
@@ -408,36 +442,38 @@ function renderEntityFacts(entity, relations, facts) {
             input.el,
         ]));
     }
-    if (!classRelations.length) {
-        classRelList.appendChild(el('li', { class: 'muted' }, 'No class relations (assign classes to see them).'));
+    if (!classRelations.length && !facts.some(f => {
+        const r = relations.find(rr => rr.id === f.relationId);
+        return r && r.aType.kind === 'entity' && f.a === entity.id;
+    })) {
+        classRelList.appendChild(el('li', { class: 'muted' }, 'No facts yet.'));
     }
 
-    // Any other facts (not from effective class relations) — plain list + delete.
+    // Any other facts (not from effective class relations) — appended to the
+    // same list so class relations stay at the top.
     const classRelIds = new Set(classRelations.map(x => x.rel.id));
     const otherFacts = facts.filter(f => {
         const r = relations.find(rr => rr.id === f.relationId);
         return r && r.aType.kind === 'entity' && f.a === entity.id && !classRelIds.has(f.relationId);
     });
-    const otherList = el('ul', { class: 'kg-facts' });
     for (const f of otherFacts) {
         const r = relations.find(rr => rr.id === f.relationId);
         if (f.derived) {
-            otherList.appendChild(el('li', { id: `fact-${f.id}` }, [
-                `${r?.name ?? '?'} → ${formatValue(r?.bType.kind, f.b)}`,
+            classRelList.appendChild(el('li', { id: `fact-${f.id}` }, [
+                el('span', { class: 'muted' }, `${r?.name ?? '?'} (${formatType(r?.bType)}): `),
+                el('strong', {}, formatValue(r?.bType.kind, f.b)),
                 derivedBadge(f),
             ]));
         } else {
-            otherList.appendChild(el('li', { id: `fact-${f.id}` }, [
-                `${r?.name ?? '?'} → ${formatValue(r?.bType.kind, f.b)} `,
+            classRelList.appendChild(el('li', { id: `fact-${f.id}` }, [
+                el('span', { class: 'muted' }, `${r?.name ?? '?'} (${formatType(r?.bType)}): `),
+                el('strong', {}, formatValue(r?.bType.kind, f.b)),
                 el('button', {
                     class: 'primary transparent',
                     onClick: () => store.deleteFact(f.id),
                 }, '×'),
             ]));
         }
-    }
-    if (!otherFacts.length) {
-        otherList.appendChild(el('li', { class: 'muted' }, 'None.'));
     }
 
     // Add-fact controls: only offer relations where this entity still has outgoing
@@ -447,8 +483,11 @@ function renderEntityFacts(entity, relations, facts) {
         if (r.aType.kind !== 'entity') return false;
         if (r.aType.classId && !store.entityMatchesClass(entity, r.aType.classId)) return false;
         if (r.bType.kind === 'entity') {
-            const out = store.outgoingBaseCount(r.id, entity.id);
-            if (out >= (r.maxOutgoing ?? 1)) return false;
+            const maxOut = r.maxOutgoing ?? 1;
+            if (maxOut > 0) {
+                const out = store.outgoingBaseCount(r.id, entity.id);
+                if (out >= maxOut) return false;
+            }
         }
         return true;
     });
@@ -489,10 +528,7 @@ function renderEntityFacts(entity, relations, facts) {
     }, 'Add fact');
 
     return el('div', { class: 'flex-col' }, [
-        el('label', { class: 'muted' }, 'Class relations'),
         classRelList,
-        el('label', { class: 'muted' }, 'Other facts'),
-        otherList,
         el('div', { class: 'flex-row' }, [relSelect, valueSlot, addBtn]),
     ]);
 }
@@ -754,8 +790,8 @@ function renderRelations() {
 
     const createTransitiveCb = el('input', { type: 'checkbox' });
     const createBidirectionalCb = el('input', { type: 'checkbox' });
-    const createMaxOut = el('input', { type: 'number', min: '1', max: '10', value: '1' });
-    const createMaxIn = el('input', { type: 'number', min: '1', max: '10', value: '1' });
+    const createMaxOut = el('input', { type: 'number', min: '0', max: '10', value: '1' });
+    const createMaxIn = el('input', { type: 'number', min: '0', max: '10', value: '1' });
     const syncPropAvailability = () => {
         const bothEntity = aKind.value === 'entity' && bKind.value === 'entity';
         const sameClass = (aClass.value || '') === (bClass.value || '');
@@ -794,8 +830,8 @@ function renderRelations() {
             store.addRelation(nameInput.value, aType, bType, {
                 transitive: createTransitiveCb.checked && !createTransitiveCb.disabled,
                 bidirectional: createBidirectionalCb.checked && !createBidirectionalCb.disabled,
-                maxOutgoing: createMaxOut.disabled ? 1 : Number(createMaxOut.value) || 1,
-                maxIncoming: createMaxIn.disabled ? 1 : Number(createMaxIn.value) || 1,
+                maxOutgoing: createMaxOut.disabled ? 1 : Number(createMaxOut.value),
+                maxIncoming: createMaxIn.disabled ? 1 : Number(createMaxIn.value),
             });
             nameInput.value = '';
             aOptions.value = '';
@@ -852,20 +888,20 @@ function renderRelationRow(r) {
         store.updateRelation(r.id, { bidirectional: bidirectionalCb.checked });
     });
     const maxOutInp = el('input', {
-        type: 'number', min: '1', max: '10',
+        type: 'number', min: '0', max: '10',
         value: String(r.maxOutgoing ?? 1),
         disabled: !canTrans || undefined,
     });
     maxOutInp.addEventListener('change', () => {
-        store.updateRelation(r.id, { maxOutgoing: Number(maxOutInp.value) || 1 });
+        store.updateRelation(r.id, { maxOutgoing: Number(maxOutInp.value) });
     });
     const maxInInp = el('input', {
-        type: 'number', min: '1', max: '10',
+        type: 'number', min: '0', max: '10',
         value: String(r.maxIncoming ?? 1),
         disabled: !canTrans || undefined,
     });
     maxInInp.addEventListener('change', () => {
-        store.updateRelation(r.id, { maxIncoming: Number(maxInInp.value) || 1 });
+        store.updateRelation(r.id, { maxIncoming: Number(maxInInp.value) });
     });
 
     return el('div', { class: 'kg-row', id: `relation-${r.id}` }, [
@@ -1095,6 +1131,124 @@ function downloadFile(name, content, mime) {
     URL.revokeObjectURL(url);
 }
 
+// ---------- Graph info panel ----------
+
+const graphInfoEl = document.getElementById('graph-info');
+let selectedEntityId = null;
+
+function hideEntityInfo() {
+    selectedEntityId = null;
+    graphInfoEl.hidden = true;
+    clear(graphInfoEl);
+}
+
+function showEntityInfo(entityId) {
+    selectedEntityId = entityId;
+    renderEntityInfo();
+}
+
+function renderEntityInfo() {
+    if (!selectedEntityId) return;
+    const { entities, relations, facts } = store.getState();
+    const entity = entities.find(e => e.id === selectedEntityId);
+    if (!entity) {
+        hideEntityInfo();
+        return;
+    }
+    clear(graphInfoEl);
+    graphInfoEl.hidden = false;
+
+    const closeBtn = el('button', {
+        class: 'primary transparent graph-info-close',
+        onClick: () => {
+            graph.clearPendingSource();
+            hideEntityInfo();
+        },
+    }, 'Close');
+
+    graphInfoEl.appendChild(el('div', { class: 'graph-info-header flex-row' }, [
+        el('h3', {}, entity.name),
+        closeBtn,
+    ]));
+
+    const classNames = entity.classIds
+        .map(cid => store.getClassName(cid))
+        .filter(Boolean);
+    if (classNames.length) {
+        graphInfoEl.appendChild(el('div', { class: 'muted' }, `Classes: ${classNames.join(', ')}`));
+    }
+
+    const valueFacts = [];
+    const outgoing = [];
+    const incoming = [];
+    const bidirectional = [];
+    const bidiSeen = new Set(); // key `${relationId}|${otherEntityId}`
+
+    // Base facts before derived so a base fact wins when both are present.
+    const orderedFacts = [...facts].sort(
+        (a, b) => Number(!!a.derived) - Number(!!b.derived),
+    );
+
+    for (const f of orderedFacts) {
+        const r = relations.find(rr => rr.id === f.relationId);
+        if (!r) continue;
+        const aMatches = r.aType.kind === 'entity' && f.a === entity.id;
+        const bMatches = r.bType.kind === 'entity' && f.b === entity.id;
+
+        if (r.bidirectional && (aMatches || bMatches)) {
+            const other = aMatches ? f.b : f.a;
+            const key = `${r.id}|${other}`;
+            if (bidiSeen.has(key)) continue;
+            bidiSeen.add(key);
+            bidirectional.push({ f, r, other });
+            continue;
+        }
+
+        if (aMatches && r.bType.kind !== 'entity') {
+            valueFacts.push({ f, r });
+        } else if (aMatches && r.bType.kind === 'entity') {
+            outgoing.push({ f, r });
+        } else if (bMatches && r.aType.kind === 'entity') {
+            incoming.push({ f, r });
+        }
+    }
+
+    const renderSection = (title, items, renderer) => {
+        if (!items.length) return;
+        const list = el('ul', {});
+        for (const item of items) list.appendChild(renderer(item));
+        graphInfoEl.appendChild(el('div', { class: 'graph-info-section' }, [
+            el('span', { class: 'graph-info-section-label' }, title),
+            list,
+        ]));
+    };
+
+    renderSection('Value facts', valueFacts, ({ f, r }) => el('li', {}, [
+        `${r.name}: ${formatValue(r.bType.kind, f.b)}`,
+        f.derived ? el('span', { class: 'muted' }, ' (derived)') : null,
+    ].filter(Boolean)));
+
+    renderSection('Bidirectional', bidirectional, ({ f, r, other }) => el('li', {}, [
+        `${r.name} ↔ ${store.getEntityName(other)}`,
+        f.derived ? el('span', { class: 'muted' }, ' (derived)') : null,
+    ].filter(Boolean)));
+
+    renderSection('Outgoing', outgoing, ({ f, r }) => el('li', {}, [
+        `${r.name} → ${store.getEntityName(f.b)}`,
+        f.derived ? el('span', { class: 'muted' }, ' (derived)') : null,
+    ].filter(Boolean)));
+
+    renderSection('Incoming', incoming, ({ f, r }) => el('li', {}, [
+        `${store.getEntityName(f.a)} → ${r.name}`,
+        f.derived ? el('span', { class: 'muted' }, ' (derived)') : null,
+    ].filter(Boolean)));
+}
+
+// Keep the info panel fresh when data changes (e.g. facts added via modal).
+store.subscribe(() => {
+    if (selectedEntityId) renderEntityInfo();
+});
+
 // ---------- Graph modal ----------
 
 const modalEl = document.getElementById('kg-modal');
@@ -1127,7 +1281,10 @@ modalEl.addEventListener('click', (e) => {
 window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
         if (!modalEl.hidden) closeModal();
-        else if (graph.pendingSourceId) graph.clearPendingSource();
+        else if (graph.pendingSourceId) {
+            graph.clearPendingSource();
+            hideEntityInfo();
+        }
     }
 });
 
@@ -1186,8 +1343,10 @@ function openGraphModal({ title, needsEntity, needsRelation, sourceId = null, ta
             if (r.aType.kind !== 'entity' || r.bType.kind !== 'entity') return false;
             if (r.aType.classId && !sourceEffective.has(r.aType.classId)) return false;
             if (r.bType.classId && !targetEffective.has(r.bType.classId)) return false;
-            if (store.outgoingBaseCount(r.id, sourceId) >= (r.maxOutgoing ?? 1)) return false;
-            if (targetId && store.incomingBaseCount(r.id, targetId) >= (r.maxIncoming ?? 1)) return false;
+            const maxOut = r.maxOutgoing ?? 1;
+            if (maxOut > 0 && store.outgoingBaseCount(r.id, sourceId) >= maxOut) return false;
+            const maxIn = r.maxIncoming ?? 1;
+            if (targetId && maxIn > 0 && store.incomingBaseCount(r.id, targetId) >= maxIn) return false;
             return true;
         });
         const currentVal = relSelect.value;

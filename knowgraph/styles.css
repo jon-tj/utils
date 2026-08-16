@@ -40,6 +40,74 @@ aside.main > table.tab {
     box-sizing: border-box;
 }
 
+/* Graph tab: flex column so the canvas fills the space below the toolbar. */
+aside.main > section.tab[data-tab="graph"] {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 10px;
+    height: 100%;
+}
+aside.main > section.tab[data-tab="graph"][hidden] {
+    display: none;
+}
+aside.main > section.tab[data-tab="graph"] .graph-canvas-wrap {
+    flex: 1;
+    min-height: 0;
+    position: relative;
+}
+aside.main > section.tab[data-tab="graph"] canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.graph-info {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 300px;
+    max-height: calc(100% - 24px);
+    overflow: auto;
+    background: #fff;
+    border-radius: 0.5rem;
+    padding: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.graph-info[hidden] {
+    display: none;
+}
+.graph-info h4 {
+    margin: 0;
+}
+.graph-info .graph-info-header {
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+}
+.graph-info .graph-info-section {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.graph-info .graph-info-section-label {
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+.graph-info ul {
+    margin: 0;
+    padding-left: 18px;
+}
+.graph-info .graph-info-close {
+    align-self: flex-end;
+}
+
 aside.main form {
     z-index: 1;
 }
@@ -75,7 +143,34 @@ canvas {
 
 .kg-facts {
     margin: 0;
-    padding-left: 20px;
+    padding-left: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.kg-facts > li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 2.2rem;
+    line-height: 1.4;
+}
+/* First cell is the label; second cell is the input/value. Keep both cells
+   the same width across every row so the fact list lines up cleanly. */
+.kg-facts > li > span:first-child,
+.kg-facts > li > label:first-child {
+    flex: 0 0 45%;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+.kg-facts > li > input,
+.kg-facts > li > select {
+    flex: 1;
+    min-width: 0;
+}
+.kg-facts > li > button {
+    flex: 0 0 auto;
 }
 
 .flex-row {
@@ -149,4 +244,8 @@ select {
 }
 .kg-modal-actions {
     justify-content: flex-end;
+}
+
+h3 {
+    margin: 0;
 }

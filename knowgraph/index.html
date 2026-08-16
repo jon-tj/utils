@@ -17,7 +17,40 @@
             <button class="primary transparent" data-tab-btn="relations">Relations</button>
         </aside>
         <aside class="main">
-            <canvas data-tab="graph" class="tab"></canvas>
+            <section data-tab="graph" class="tab">
+                <div class="flex-row">
+                    <div class="flex-col">
+                        <label for="graph-layout">Layout</label>
+                        <select id="graph-layout">
+                            <option value="force">Force-directed</option>
+                            <option value="circular">Circular</option>
+                            <option value="grid">Grid</option>
+                        </select>
+                    </div>
+                    <div class="flex-col">
+                        <label for="graph-color">Color by</label>
+                        <select id="graph-color">
+                            <option value="class">Class</option>
+                            <option value="relation">Relation</option>
+                        </select>
+                    </div>
+                    <div class="flex-col">
+                        <label for="graph-size">Size by</label>
+                        <select id="graph-size">
+                            <option value="degree">Degree</option>
+                            <option value="centrality">Centrality</option>
+                        </select>
+                    </div>
+                    <div class="flex-col">
+                        <label for="graph-query">Query</label>
+                        <input type="text" id="graph-query" placeholder="is sibling to=Mariana" />
+                    </div>
+                </div>
+                <div class="graph-canvas-wrap">
+                    <canvas></canvas>
+                    <aside id="graph-info" class="graph-info" hidden></aside>
+                </div>
+            </section>
             <table data-tab="table" id="main__table" class="tab" hidden></table>
             <section data-tab="entities" id="main__entities" class="tab" hidden></section>
             <section data-tab="classes" id="main__classes" class="tab" hidden></section>
