@@ -30,6 +30,65 @@ export function createTypescriptInterface(schema, mappings = {}, indentation = 2
     }
 }
 
+export function createSchemaHtml(schema, indentation = 2, currentIndent = 0, path = []) {
+    const isList = Array.isArray(schema);
+    const isDict = schema !== null && typeof schema === 'object' && !isList;
+
+    if (isDict && schema[ENUM_MARKER]) {
+        return escapeHtml(schema[ENUM_MARKER]);
+    }
+    if (!isList && !isDict) {
+        const type = typeof schema;
+        if (type === 'string') {
+            return escapeHtml(interpretStringType(schema) || 'string');
+        }
+        return escapeHtml(type);
+    }
+
+    const indent = ' '.repeat(currentIndent);
+    const newIndent = currentIndent + indentation;
+    const innerIndent = ' '.repeat(newIndent);
+
+    if (isDict) {
+        const entries = Object.entries(schema).map(([key, value]) => {
+            const fieldPath = [...path, key];
+            const typeStr = getTypeLabel(value);
+            const keySpan = `<span class="field-key" data-path='${escapeAttr(JSON.stringify(fieldPath))}' data-type="${escapeAttr(typeStr)}">${escapeHtml(key)}</span>`;
+            const valueHtml = createSchemaHtml(value, indentation, newIndent, fieldPath);
+            return `${innerIndent}${keySpan}: ${valueHtml};`;
+        });
+        return `{\n${entries.join('\n')}\n${indent}}`;
+    }
+    if (isList) {
+        const enumType = interpretEnumType(schema);
+        const sample = enumType ? null : mergeSamples(schema);
+        const arrayPath = [...path, 0];
+        const inner = enumType
+            ? escapeHtml(enumType)
+            : createSchemaHtml(sample, indentation, newIndent, arrayPath);
+        return `[\n${innerIndent}${inner}\n${indent}]`;
+    }
+}
+
+function getTypeLabel(value) {
+    if (value === null || value === undefined) return 'null';
+    if (Array.isArray(value)) return 'array';
+    if (typeof value === 'object') {
+        if (value[ENUM_MARKER]) return 'enum';
+        return 'object';
+    }
+    if (typeof value === 'string') return interpretStringType(value) || 'string';
+    return typeof value;
+}
+
+function escapeHtml(str) {
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function escapeAttr(str) {
+    return str.replace(/&/g, '&amp;').replace(/'/g, '&#39;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
 function mergeSamples(items) {
     if (!items.length) return undefined;
     const allObjects = items.every(v => v !== null && typeof v === 'object' && !Array.isArray(v));
@@ -97,6 +156,7 @@ function interpretStringType(value) {
     if (/^(true|false)$/.test(value)) {
         return 'str.boolean';
     }
+    // 64af12c5-f522-41d0-baf2-dd7a7303e86e
     if(value.length == 36 && value.split("-").length == 5) {
         return 'str.uuid';
     }
