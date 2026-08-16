@@ -1139,7 +1139,7 @@ let selectedEntityId = null;
 // ---------- Hidden entities / classes ----------
 
 const HIDDEN_STORAGE_KEY = 'knowgraph:v1:hidden';
-let hiddenState = { entities: [], classes: [] };
+let hiddenState = { entities: [], classes: [], relations: [] };
 try {
     const raw = localStorage.getItem(HIDDEN_STORAGE_KEY);
     if (raw) {
@@ -1147,6 +1147,7 @@ try {
         hiddenState = {
             entities: Array.isArray(parsed.entities) ? parsed.entities : [],
             classes: Array.isArray(parsed.classes) ? parsed.classes : [],
+            relations: Array.isArray(parsed.relations) ? parsed.relations : [],
         };
     }
 } catch { /* ignore */ }
@@ -1174,6 +1175,8 @@ function computeHiddenEntitySet() {
     hiddenState.entities = hiddenState.entities.filter(id => existingIds.has(id));
     const existingClassIds = new Set(store.getState().classes.map(c => c.id));
     hiddenState.classes = hiddenState.classes.filter(id => existingClassIds.has(id));
+    const existingRelationIds = new Set(store.getState().relations.map(r => r.id));
+    hiddenState.relations = hiddenState.relations.filter(id => existingRelationIds.has(id));
     return set;
 }
 
@@ -1182,7 +1185,7 @@ const hiddenPopover = document.getElementById('graph-hidden-popover');
 const hiddenCountEl = hiddenBadge.querySelector('.graph-hidden-count');
 
 function refreshHiddenBadge() {
-    const total = hiddenState.entities.length + hiddenState.classes.length;
+    const total = hiddenState.entities.length + hiddenState.classes.length + hiddenState.relations.length;
     if (!total) {
         hiddenBadge.hidden = true;
         hiddenPopover.hidden = true;
@@ -1195,6 +1198,7 @@ function refreshHiddenBadge() {
 
 function applyHidden() {
     graph.setHiddenEntities(computeHiddenEntitySet());
+    graph.setHiddenRelations(new Set(hiddenState.relations));
     persistHidden();
     refreshHiddenBadge();
     // If the currently selected entity became hidden, close its info panel.
@@ -1212,6 +1216,10 @@ function hideClass(id) {
     if (!hiddenState.classes.includes(id)) hiddenState.classes.push(id);
     applyHidden();
 }
+function hideRelation(id) {
+    if (!hiddenState.relations.includes(id)) hiddenState.relations.push(id);
+    applyHidden();
+}
 function unhideEntity(id) {
     hiddenState.entities = hiddenState.entities.filter(x => x !== id);
     applyHidden();
@@ -1220,15 +1228,20 @@ function unhideClass(id) {
     hiddenState.classes = hiddenState.classes.filter(x => x !== id);
     applyHidden();
 }
+function unhideRelation(id) {
+    hiddenState.relations = hiddenState.relations.filter(x => x !== id);
+    applyHidden();
+}
 function unhideAll() {
     hiddenState.entities = [];
     hiddenState.classes = [];
+    hiddenState.relations = [];
     applyHidden();
 }
 
 function renderHiddenPopover() {
     clear(hiddenPopover);
-    if (!hiddenState.entities.length && !hiddenState.classes.length) return;
+    if (!hiddenState.entities.length && !hiddenState.classes.length && !hiddenState.relations.length) return;
     hiddenPopover.appendChild(el('h4', {}, 'Hidden'));
     if (hiddenState.classes.length) {
         const list = el('ul', {});
@@ -1244,6 +1257,23 @@ function renderHiddenPopover() {
         }
         hiddenPopover.appendChild(el('div', {}, [
             el('span', { class: 'muted' }, 'Classes'),
+            list,
+        ]));
+    }
+    if (hiddenState.relations.length) {
+        const list = el('ul', {});
+        for (const rid of hiddenState.relations) {
+            const rel = store.getRelation(rid);
+            list.appendChild(el('li', {}, [
+                el('span', {}, rel?.name ?? '(missing)'),
+                el('button', {
+                    class: 'primary transparent',
+                    onClick: () => unhideRelation(rid),
+                }, 'Show'),
+            ]));
+        }
+        hiddenPopover.appendChild(el('div', {}, [
+            el('span', { class: 'muted' }, 'Relations'),
             list,
         ]));
     }
@@ -1339,6 +1369,29 @@ function renderEntityInfo() {
             onClick: () => hideClass(cid),
         }, `Hide all ${store.getClassName(cid)}`)),
     ]);
+
+    // Most frequent entity↔entity relation touching this entity (base + derived).
+    const relCounts = new Map();
+    for (const f of facts) {
+        const r = relations.find(rr => rr.id === f.relationId);
+        if (!r) continue;
+        if (r.aType.kind !== 'entity' || r.bType.kind !== 'entity') continue;
+        if (f.a !== entity.id && f.b !== entity.id) continue;
+        relCounts.set(r.id, (relCounts.get(r.id) ?? 0) + 1);
+    }
+    let mostRelId = null;
+    let mostCount = 0;
+    for (const [rid, c] of relCounts) {
+        if (c > mostCount) { mostCount = c; mostRelId = rid; }
+    }
+    if (mostRelId && !hiddenState.relations.includes(mostRelId)) {
+        const rel = relations.find(r => r.id === mostRelId);
+        actions.appendChild(el('button', {
+            class: 'primary transparent',
+            onClick: () => hideRelation(mostRelId),
+        }, `Hide most frequent: ${rel?.name ?? '?'} (${mostCount})`));
+    }
+
     graphInfoEl.appendChild(actions);
 
     const valueFacts = [];

@@ -121,14 +121,18 @@ export class GraphView {
 
     _computeMetrics() {
         const ids = [...this.nodes.keys()];
-        const adj = new Map(ids.map(id => [id, new Set()]));
+        const visibleIds = ids.filter(id => this._isNodeVisible(id));
+        const adj = new Map(visibleIds.map(id => [id, new Set()]));
         for (const e of this.edges) {
+            if (!this._isEdgeVisible(e)) continue;
             adj.get(e.a)?.add(e.b);
             adj.get(e.b)?.add(e.a);
         }
-        this.degree = new Map(ids.map(id => [id, adj.get(id).size]));
+        // Degree/closeness default to 0 for anything not in the visible subgraph.
+        this.degree = new Map(ids.map(id => [id, adj.get(id)?.size ?? 0]));
         this.closeness = new Map();
-        for (const s of ids) {
+        for (const id of ids) this.closeness.set(id, 0);
+        for (const s of visibleIds) {
             const dist = new Map([[s, 0]]);
             const queue = [s];
             while (queue.length) {
@@ -237,8 +241,21 @@ export class GraphView {
             targetIds.has(edge.a) || targetIds.has(edge.b);
     }
 
+    _isNodeVisible(id) {
+        if (this.hiddenEntityIds.has(id)) return false;
+        if (this.visibleNodeIds && !this.visibleNodeIds.has(id)) return false;
+        return true;
+    }
+
+    _isEdgeVisible(e) {
+        if (this.hiddenRelationIds.has(e.relationId)) return false;
+        if (this.visibleEdgeFilter && !this.visibleEdgeFilter(e)) return false;
+        if (!this._isNodeVisible(e.a) || !this._isNodeVisible(e.b)) return false;
+        return true;
+    }
+
     _applyLayout() {
-        const ids = [...this.nodes.keys()];
+        const ids = [...this.nodes.keys()].filter(id => this._isNodeVisible(id));
         if (!ids.length) return;
         if (this.layout === 'circular') {
             const cx = this.width / 2;
@@ -273,9 +290,22 @@ export class GraphView {
     }
     setColorBy(mode) { this.colorBy = mode; }
     setSizeBy(mode) { this.sizeBy = mode; }
-    setQuery(q) { this.query = q; this._applyQuery(); }
-    setHiddenEntities(set) { this.hiddenEntityIds = set instanceof Set ? set : new Set(set); }
-    setHiddenRelations(set) { this.hiddenRelationIds = set instanceof Set ? set : new Set(set); }
+    setQuery(q) {
+        this.query = q;
+        this._applyQuery();
+        this._computeMetrics();
+        if (this.layout !== 'force') this._applyLayout();
+    }
+    setHiddenEntities(set) {
+        this.hiddenEntityIds = set instanceof Set ? set : new Set(set);
+        this._computeMetrics();
+        if (this.layout !== 'force') this._applyLayout();
+    }
+    setHiddenRelations(set) {
+        this.hiddenRelationIds = set instanceof Set ? set : new Set(set);
+        this._computeMetrics();
+        if (this.layout !== 'force') this._applyLayout();
+    }
 
     start() {
         if (this.running) return;
@@ -295,9 +325,9 @@ export class GraphView {
 
     step() {
         if (this.layout !== 'force') return;
-        const ids = [...this.nodes.keys()];
+        const ids = [...this.nodes.keys()].filter(id => this._isNodeVisible(id));
 
-        // Repulsion between all node pairs
+        // Repulsion between all visible node pairs
         for (let i = 0; i < ids.length; i++) {
             const na = this.nodes.get(ids[i]);
             for (let j = i + 1; j < ids.length; j++) {
@@ -321,8 +351,9 @@ export class GraphView {
             }
         }
 
-        // Spring attraction along edges
+        // Spring attraction along visible edges
         for (const e of this.edges) {
+            if (!this._isEdgeVisible(e)) continue;
             const na = this.nodes.get(e.a);
             const nb = this.nodes.get(e.b);
             if (!na || !nb) continue;
@@ -339,10 +370,16 @@ export class GraphView {
             nb.vy -= fy;
         }
 
-        // Weak pull toward center + integrate
+        // Weak pull toward center + integrate (only for visible nodes; hidden
+        // nodes stay parked at their last position so they don't drift).
         const cx = this.width / 2;
         const cy = this.height / 2;
         for (const [id, n] of this.nodes) {
+            if (!this._isNodeVisible(id)) {
+                n.vx = 0;
+                n.vy = 0;
+                continue;
+            }
             if (this.dragging === id) {
                 n.vx = 0;
                 n.vy = 0;
