@@ -1,5 +1,6 @@
 import * as store from './store.js';
 import { GraphView } from './graph.js';
+import { execute as consoleExecute } from './console.js';
 
 // ---------- Tab switching ----------
 
@@ -1666,6 +1667,82 @@ function openGraphModal({ title, needsEntity, needsRelation, sourceId = null, ta
     if (nameInput) nameInput.focus();
     else if (relSelect) relSelect.focus();
 }
+
+// ---------- Console tab ----------
+
+const CONSOLE_LOG_KEY = 'knowgraph:v1:console-log';
+const CONSOLE_LOG_MAX = 50;
+
+const consoleOutput = document.getElementById('console-output');
+const consoleInput = document.getElementById('console-input');
+
+// Load persisted log and history
+let consoleLog = [];
+try {
+    const raw = localStorage.getItem(CONSOLE_LOG_KEY);
+    if (raw) consoleLog = JSON.parse(raw);
+} catch { /* ignore */ }
+
+const consoleHistory = consoleLog.map(e => e.cmd);
+let consoleHistoryIdx = consoleHistory.length;
+
+// Replay persisted log entries into the output
+for (const entry of consoleLog) {
+    consoleAppendRaw(`> ${entry.cmd}`, 'console-cmd');
+    const isError = entry.result.startsWith('❌');
+    const isOk = entry.result.startsWith('✅');
+    consoleAppendRaw(entry.result, isError ? 'console-err' : isOk ? 'console-ok' : '');
+}
+
+function persistConsoleLog() {
+    // Keep last N entries
+    if (consoleLog.length > CONSOLE_LOG_MAX) consoleLog = consoleLog.slice(-CONSOLE_LOG_MAX);
+    localStorage.setItem(CONSOLE_LOG_KEY, JSON.stringify(consoleLog));
+}
+
+function consoleAppendRaw(text, cls) {
+    const span = document.createElement('span');
+    if (cls) span.className = cls;
+    span.textContent = text + '\n';
+    consoleOutput.appendChild(span);
+}
+
+function consoleAppend(text, cls) {
+    consoleAppendRaw(text, cls);
+    consoleOutput.scrollTop = consoleOutput.scrollHeight;
+}
+
+consoleInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+        const cmd = consoleInput.value;
+        consoleInput.value = '';
+        if (!cmd.trim()) return;
+        consoleHistory.push(cmd);
+        consoleHistoryIdx = consoleHistory.length;
+        consoleAppend(`> ${cmd}`, 'console-cmd');
+        const result = consoleExecute(cmd);
+        const isError = result.startsWith('❌');
+        const isOk = result.startsWith('✅');
+        consoleAppend(result, isError ? 'console-err' : isOk ? 'console-ok' : '');
+        consoleLog.push({ cmd, result });
+        persistConsoleLog();
+    } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (consoleHistoryIdx > 0) {
+            consoleHistoryIdx--;
+            consoleInput.value = consoleHistory[consoleHistoryIdx];
+        }
+    } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (consoleHistoryIdx < consoleHistory.length - 1) {
+            consoleHistoryIdx++;
+            consoleInput.value = consoleHistory[consoleHistoryIdx];
+        } else {
+            consoleHistoryIdx = consoleHistory.length;
+            consoleInput.value = '';
+        }
+    }
+});
 
 // ---------- Boot ----------
 

@@ -127,6 +127,63 @@ aside.main > section.tab[data-tab="graph"] canvas {
     box-sizing: border-box;
 }
 
+/* Console tab */
+.console-wrap {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 8px;
+    box-sizing: border-box;
+}
+#main__console {
+    background-color: #1e1e1e;
+    height: 100%;
+}
+.console-output {
+    flex: 1;
+    overflow-y: auto;
+    margin: 0;
+    padding: 8px;
+    color: #d4d4d4;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 0.85rem;
+    border-radius: 4px 4px 0 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+.console-output .console-cmd {
+    color: #569cd6;
+}
+.console-output .console-err {
+    color: #f44747;
+}
+.console-output .console-ok {
+    color: #6a9955;
+}
+.console-input-row {
+    display: flex;
+    align-items: center;
+    border-radius: 0 0 4px 4px;
+    padding: 4px 8px;
+}
+.console-input,
+.console-prompt {
+    color: #569cd6;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 0.85rem;
+    margin-right: 6px;
+    user-select: none;
+}
+input.console-input#console-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #d4d4d4;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 0.85rem;
+}
+
 .graph-query-row {
     display: flex;
     align-items: center;

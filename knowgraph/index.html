@@ -19,6 +19,7 @@
             <button class="primary transparent" data-tab-btn="entities">Entities</button>
             <button class="primary transparent" data-tab-btn="classes">Classes</button>
             <button class="primary transparent" data-tab-btn="relations">Relations</button>
+            <button class="primary transparent" data-tab-btn="console">Console</button>
         </aside>
         <aside class="main">
             <section data-tab="graph" class="tab">
@@ -72,6 +73,16 @@
             <section data-tab="entities" id="main__entities" class="tab" hidden></section>
             <section data-tab="classes" id="main__classes" class="tab" hidden></section>
             <section data-tab="relations" id="main__relations" class="tab" hidden></section>
+            <section data-tab="console" id="main__console" class="tab" hidden>
+                <div class="console-wrap">
+                    <pre class="console-output" id="console-output">Type HELP to see available commands.
+</pre>
+                    <div class="console-input-row">
+                        <span class="console-prompt">&gt;</span>
+                        <input type="text" id="console-input" class="console-input" placeholder="GET /entities" autocomplete="off" spellcheck="false" />
+                    </div>
+                </div>
+            </section>
         </aside>
         <div id="kg-modal" class="kg-modal" hidden>
             <div class="kg-modal-card">
