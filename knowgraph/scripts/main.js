@@ -468,11 +468,11 @@ function renderEntityFacts(entity, relations, facts) {
             classRelList.appendChild(el('li', { id: `fact-${f.id}` }, [
                 el('span', { class: 'muted' }, `${r?.name ?? '?'} (${formatType(r?.bType)}): `),
                 el('strong', {}, formatValue(r?.bType.kind, f.b)),
-                el('button', {
+                r?.locked ? null : el('button', {
                     class: 'primary transparent',
                     onClick: () => store.deleteFact(f.id),
                 }, '×'),
-            ]));
+            ].filter(Boolean)));
         }
     }
 
@@ -808,6 +808,8 @@ function renderRelations() {
     bClass.addEventListener('change', syncPropAvailability);
     syncPropAvailability();
 
+    const createDescInput = el('input', { type: 'text', placeholder: 'Description (optional)' });
+
     relationsRoot.appendChild(el('form', {
         class: 'kg-form',
         onSubmit: (e) => {
@@ -832,6 +834,7 @@ function renderRelations() {
                 bidirectional: createBidirectionalCb.checked && !createBidirectionalCb.disabled,
                 maxOutgoing: createMaxOut.disabled ? 1 : Number(createMaxOut.value),
                 maxIncoming: createMaxIn.disabled ? 1 : Number(createMaxIn.value),
+                description: createDescInput.value,
             });
             nameInput.value = '';
             aOptions.value = '';
@@ -840,11 +843,14 @@ function renderRelations() {
             createBidirectionalCb.checked = false;
             createMaxOut.value = '1';
             createMaxIn.value = '1';
+            createDescInput.value = '';
         },
     }, [
         el('div', { class: 'flex-col' }, [
             el('label', {}, 'Name'),
             nameInput,
+            el('label', {}, 'Description'),
+            createDescInput,
             el('label', {}, 'A side'),
             el('div', { class: 'flex-row' }, [aKind, aClass, aOptions]),
             el('label', {}, 'B side'),
@@ -869,6 +875,17 @@ function renderRelations() {
 }
 
 function renderRelationRow(r) {
+    if (r.locked) {
+        return el('div', { class: 'kg-row', id: `relation-${r.id}` }, [
+            el('div', { class: 'flex-row' }, [
+                el('strong', {}, r.name),
+                el('span', { class: 'muted' }, ` ${formatType(r.aType)} → ${formatType(r.bType)} `),
+                el('span', { class: 'muted' }, '(locked)'),
+            ]),
+            r.description ? el('div', { class: 'muted' }, r.description) : null,
+        ].filter(Boolean));
+    }
+
     const canTrans = store.canBeTransitive(r);
     const canBidi = store.canBeBidirectional(r);
     const transitiveCb = el('input', {
@@ -904,6 +921,11 @@ function renderRelationRow(r) {
         store.updateRelation(r.id, { maxIncoming: Number(maxInInp.value) });
     });
 
+    const descInput = el('input', { type: 'text', value: r.description || '', placeholder: 'Description (optional)' });
+    descInput.addEventListener('change', () => {
+        store.updateRelation(r.id, { description: descInput.value.trim() });
+    });
+
     return el('div', { class: 'kg-row', id: `relation-${r.id}` }, [
         el('div', { class: 'flex-row' }, [
             el('strong', {}, r.name),
@@ -916,6 +938,10 @@ function renderRelationRow(r) {
                     }
                 },
             }, 'Delete'),
+        ]),
+        el('div', { class: 'flex-row' }, [
+            el('label', {}, 'Description: '),
+            descInput,
         ]),
         el('div', { class: 'flex-row' }, [
             el('label', {}, [transitiveCb, ' transitive']),
@@ -1439,30 +1465,55 @@ function renderEntityInfo() {
         ]));
     };
 
+    const relSpan = (r, text) => el('span', { title: r.description || r.name }, text || r.name);
+
     renderSection('Value facts', valueFacts, ({ f, r }) => el('li', {}, [
-        `${r.name}: ${formatValue(r.bType.kind, f.b)}`,
+        relSpan(r, `${r.name}: ${formatValue(r.bType.kind, f.b)}`),
         f.derived ? el('span', { class: 'muted' }, ' (derived)') : null,
     ].filter(Boolean)));
 
     renderSection('Bidirectional', bidirectional, ({ f, r, other }) => el('li', {}, [
-        `${r.name} ↔ ${store.getEntityName(other)}`,
+        relSpan(r, `${r.name} ↔ ${store.getEntityName(other)}`),
         f.derived ? el('span', { class: 'muted' }, ' (derived)') : null,
     ].filter(Boolean)));
 
     renderSection('Outgoing', outgoing, ({ f, r }) => el('li', {}, [
-        `${r.name} → ${store.getEntityName(f.b)}`,
+        relSpan(r, `${r.name} → ${store.getEntityName(f.b)}`),
         f.derived ? el('span', { class: 'muted' }, ' (derived)') : null,
     ].filter(Boolean)));
 
     renderSection('Incoming', incoming, ({ f, r }) => el('li', {}, [
-        `${store.getEntityName(f.a)} → ${r.name}`,
+        relSpan(r, `${store.getEntityName(f.a)} → ${r.name}`),
         f.derived ? el('span', { class: 'muted' }, ' (derived)') : null,
     ].filter(Boolean)));
+
+    // --- Notes section ---
+    const notesTextarea = el('textarea', {
+        class: 'graph-info-notes',
+        placeholder: 'Write notes here... Use [Entity Name] to link to other entities.',
+    });
+    notesTextarea.value = entity.notes || '';
+    let notesTimeout = null;
+    notesTextarea.addEventListener('input', () => {
+        clearTimeout(notesTimeout);
+        notesTimeout = setTimeout(() => {
+            store.updateEntityNotes(entity.id, notesTextarea.value);
+        }, 500);
+    });
+    graphInfoEl.appendChild(el('div', { class: 'graph-info-section' }, [
+        el('span', { class: 'graph-info-section-label' }, 'Notes'),
+        notesTextarea,
+    ]));
 }
 
 // Keep the info panel fresh when data changes (e.g. facts added via modal).
 store.subscribe(() => {
-    if (selectedEntityId) renderEntityInfo();
+    if (selectedEntityId) {
+        // Don't re-render if the notes textarea is focused (avoids stealing focus
+        // when the user is typing notes and the debounced save triggers persist).
+        if (graphInfoEl.contains(document.activeElement) && document.activeElement.tagName === 'TEXTAREA') return;
+        renderEntityInfo();
+    }
 });
 
 // ---------- Graph modal ----------

@@ -118,6 +118,15 @@ aside.main > section.tab[data-tab="graph"] canvas {
     justify-content: flex-start;
 }
 
+.graph-info-notes {
+    width: 100%;
+    min-height: 80px;
+    resize: vertical;
+    font-family: inherit;
+    font-size: 0.85rem;
+    box-sizing: border-box;
+}
+
 .graph-query-row {
     display: flex;
     align-items: center;

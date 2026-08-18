@@ -51,9 +51,14 @@ function migrate(parsed) {
         if (typeof r.maxIncoming !== 'number') r.maxIncoming = 1;
         r.maxOutgoing = clampSlot(r.maxOutgoing);
         r.maxIncoming = clampSlot(r.maxIncoming);
+        if (typeof r.description !== 'string') r.description = '';
+        if (typeof r.locked !== 'boolean') r.locked = false;
     }
     for (const f of s.facts) {
         if (f.derived && !Array.isArray(f.derivedFrom)) f.derivedFrom = [];
+    }
+    for (const e of s.entities) {
+        if (typeof e.notes !== 'string') e.notes = '';
     }
     return s;
 }
@@ -140,6 +145,8 @@ export function addRelation(name, aType, bType, opts = {}) {
         bidirectional: !!opts.bidirectional,
         maxOutgoing: clampSlot(opts.maxOutgoing ?? 1),
         maxIncoming: clampSlot(opts.maxIncoming ?? 1),
+        description: (opts.description ?? '').trim(),
+        locked: !!opts.locked,
     };
     state.relations.push(r);
     rebuildRelation(r.id);
@@ -149,6 +156,7 @@ export function addRelation(name, aType, bType, opts = {}) {
 export function updateRelation(id, patch) {
     const r = state.relations.find(x => x.id === id);
     if (!r) return;
+    if (r.locked) return; // locked relations cannot be edited
     if ('maxOutgoing' in patch) patch.maxOutgoing = clampSlot(patch.maxOutgoing);
     if ('maxIncoming' in patch) patch.maxIncoming = clampSlot(patch.maxIncoming);
     const affects =
@@ -161,6 +169,8 @@ export function updateRelation(id, patch) {
     persist();
 }
 export function deleteRelation(id) {
+    const r = state.relations.find(x => x.id === id);
+    if (r && r.locked) return; // locked relations cannot be deleted
     state.relations = state.relations.filter(r => r.id !== id);
     state.facts = state.facts.filter(f => f.relationId !== id);
     for (const c of state.classes) {
@@ -171,7 +181,7 @@ export function deleteRelation(id) {
 
 // --- Entities ---
 export function addEntity(name, classIds = []) {
-    const e = { id: uid(), name: name.trim(), classIds: [...classIds] };
+    const e = { id: uid(), name: name.trim(), classIds: [...classIds], notes: '' };
     state.entities.push(e);
     persist();
     return e;
@@ -239,6 +249,63 @@ export function getRelation(id) {
 }
 export function getClass(id) {
     return state.classes.find(c => c.id === id);
+}
+
+// --- Notes & links-to ---
+
+// Returns (and lazily creates) the locked "links-to" relation.
+export function getOrCreateLinksToRelation() {
+    let rel = state.relations.find(r => r.name === 'links-to' && r.locked);
+    if (rel) return rel;
+    rel = {
+        id: uid(),
+        name: 'links-to',
+        aType: { kind: 'entity' },
+        bType: { kind: 'entity' },
+        transitive: false,
+        bidirectional: false,
+        maxOutgoing: 0,
+        maxIncoming: 0,
+        description: 'Auto-generated from [entity] references in notes.',
+        locked: true,
+    };
+    state.relations.push(rel);
+    persist();
+    return rel;
+}
+
+// Parse notes text and sync "links-to" facts for the given entity.
+export function updateEntityNotes(entityId, notes) {
+    const e = state.entities.find(x => x.id === entityId);
+    if (!e) return;
+    e.notes = notes;
+
+    // Parse [entity name] references
+    const refs = [];
+    const regex = /\[([^\]]+)\]/g;
+    let match;
+    while ((match = regex.exec(notes)) !== null) {
+        const name = match[1].trim();
+        const target = state.entities.find(en => en.name === name && en.id !== entityId);
+        if (target) refs.push(target.id);
+    }
+
+    const linksRel = getOrCreateLinksToRelation();
+
+    // Remove existing links-to facts from this entity
+    state.facts = state.facts.filter(f =>
+        !(f.relationId === linksRel.id && f.a === entityId)
+    );
+
+    // Create new links-to facts (deduplicated)
+    const seen = new Set();
+    for (const targetId of refs) {
+        if (seen.has(targetId)) continue;
+        seen.add(targetId);
+        state.facts.push({ id: uid(), relationId: linksRel.id, a: entityId, b: targetId });
+    }
+
+    persist();
 }
 
 // --- Inheritance helpers ---
