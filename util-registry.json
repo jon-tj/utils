@@ -33,5 +33,12 @@
         "group": "Knowledge",
         "description": "Create and query your own knowledge graph",
         "icon": "graph_4"
+    },
+    {
+        "id": "joel-piss-counter",
+        "name": "Joel Piss Counter",
+        "group": "Health",
+        "description": "Keep count of every little tinkle Joel takes",
+        "icon": "water_drop"
     }
 ]

@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Joel Piss Counter</title>
+        <link href="../shared/theme.css" rel="stylesheet" />
+        <link href="styles.css" rel="stylesheet" />
+        <link rel="icon" href="../shared/favicon.png" />
+    </head>
+    <body>
+        <main>
+            <div class="bubbles" aria-hidden="true"></div>
+            <h1 class="title">Joel Piss Counter <span class="wiggle">💦</span></h1>
+            <p class="subtitle">keeping track of every little tinkle</p>
+
+            <section class="hero">
+                <button id="btn-pee" class="pee-button" aria-label="Log a pee">
+                    <span class="drop">💧</span>
+                    <span class="pee-label">Joel peed!</span>
+                </button>
+                <div class="stats">
+                    <div class="stat">
+                        <span class="stat-value" data-slot="today">0</span>
+                        <span class="stat-label">today</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value" data-slot="total">0</span>
+                        <span class="stat-label">all time</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value" data-slot="best">0</span>
+                        <span class="stat-label">record day</span>
+                    </div>
+                </div>
+                <p class="mood" data-slot="mood">No pees yet today. Hydrate, Joel! 🥤</p>
+                <p class="last" data-slot="last"></p>
+                <div class="controls">
+                    <button id="btn-undo" class="cute-button">↩ Undo</button>
+                    <button id="btn-reset" class="cute-button danger">🗑 Reset everything</button>
+                </div>
+            </section>
+
+            <section class="history">
+                <h2>Pee Diary 📔</h2>
+                <ul id="history-list"></ul>
+            </section>
+        </main>
+    </body>
+    <script type="module" src="scripts/main.js"></script>
+</html>
