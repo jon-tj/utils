@@ -40,5 +40,12 @@
         "group": "Health",
         "description": "Keep count of every little tinkle Joel takes",
         "icon": "water_drop"
+    },
+    {
+        "id": "arithmetic-practice",
+        "name": "Arithmetic Practice",
+        "group": "Knowledge",
+        "description": "Drill multiplication and division tables with a timed arrow-key game and accuracy heatmap",
+        "icon": "calculate"
     }
 ]

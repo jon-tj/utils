@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Arithmetic Practice</title>
+        <link href="../shared/theme.css" rel="stylesheet" />
+        <link href="styles.css" rel="stylesheet" />
+        <link rel="icon" href="../shared/favicon.png" />
+    </head>
+    <body>
+        <main>
+            <h3>Arithmetic Practice</h3>
+            <hr />
+            <div class="layout">
+                <section class="card game">
+                    <div class="settings">
+                        <label>
+                            Operation
+                            <select id="op">
+                                <option value="mul">Multiplication</option>
+                                <option value="div">Division</option>
+                                <option value="both">Both</option>
+                            </select>
+                        </label>
+                        <label>
+                            Matrix size
+                            <select id="size">
+                                <option value="10">10 × 10</option>
+                                <option value="15">15 × 15</option>
+                                <option value="20">20 × 20</option>
+                                <option value="50">50 × 50</option>
+                                <option value="100">100 × 100</option>
+                            </select>
+                        </label>
+                        <label>
+                            Time limit
+                            <select id="limit">
+                                <option value="1">1 s</option>
+                                <option value="2">2 s</option>
+                                <option value="3">3 s</option>
+                                <option value="5">5 s</option>
+                            </select>
+                        </label>
+                        <button id="btn-start" class="primary">Start</button>
+                    </div>
+
+                    <div class="timer"><div class="timer-fill"></div></div>
+
+                    <div class="cross">
+                        <button class="option" data-index="0" style="grid-area: up">
+                            <span class="option-value"></span><kbd>↑ W</kbd>
+                        </button>
+                        <button class="option" data-index="1" style="grid-area: left">
+                            <span class="option-value"></span><kbd>← A</kbd>
+                        </button>
+                        <div class="prompt" id="prompt">Press Space to start</div>
+                        <button class="option" data-index="2" style="grid-area: right">
+                            <span class="option-value"></span><kbd>→ D</kbd>
+                        </button>
+                        <button class="option" data-index="3" style="grid-area: down">
+                            <span class="option-value"></span><kbd>↓ S</kbd>
+                        </button>
+                    </div>
+
+                    <p class="feedback" id="feedback">&nbsp;</p>
+                    <div class="session">
+                        <span class="hearts" data-slot="hearts" aria-label="Lives"></span>
+                        <span>Score <strong data-slot="score">0</strong></span>
+                        <span>Streak <strong data-slot="streak">0</strong></span>
+                        <span>High score <strong data-slot="high-score">0</strong></span>
+                    </div>
+                    <p class="muted hint">
+                        Arrow keys or WASD pick an answer · Space starts · Esc stops.
+                        Division answers are rounded to 3 decimals.
+                    </p>
+                </section>
+
+                <section class="card results">
+                    <div class="results-header">
+                        <h4>Accuracy</h4>
+                        <select id="heatmap-op">
+                            <option value="mul">Multiplication</option>
+                            <option value="div">Division</option>
+                        </select>
+                    </div>
+
+                    <div class="tiles">
+                        <div class="tile">
+                            <span class="tile-value" data-slot="accuracy">–</span>
+                            <span class="tile-label">overall accuracy</span>
+                        </div>
+                        <div class="tile">
+                            <span class="tile-value" data-slot="attempts">0</span>
+                            <span class="tile-label">attempts</span>
+                        </div>
+                        <div class="tile">
+                            <span class="tile-value" data-slot="coverage">0%</span>
+                            <span class="tile-label">pairs tried</span>
+                        </div>
+                        <div class="tile">
+                            <span class="tile-value" data-slot="avg-time">–</span>
+                            <span class="tile-label">avg recall time</span>
+                        </div>
+                    </div>
+
+                    <div class="heatmap-wrap">
+                        <canvas id="heatmap"></canvas>
+                        <div class="tooltip" id="tooltip" hidden></div>
+                    </div>
+                    <div class="legend">
+                        <span class="swatch untried"></span> not tried
+                        <span class="legend-gap"></span>
+                        0%
+                        <span class="gradient"></span>
+                        100%
+                    </div>
+                    <p class="muted caption">
+                        Rows are the first number, columns the second, so 7 × 8 and 8 × 7 are tracked separately.
+                    </p>
+
+                    <h4>Top 5 error rates</h4>
+                    <p class="muted caption">For multiplication, each pair's error rate is blended 33% with its flipped pair (b × a).</p>
+                    <ol id="worst-list" class="worst-list"></ol>
+
+                    <button id="btn-reset" class="transparent reset">Reset statistics</button>
+                </section>
+            </div>
+        </main>
+    </body>
+    <script type="module" src="scripts/main.js"></script>
+</html>
