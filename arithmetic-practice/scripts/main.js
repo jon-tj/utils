@@ -425,7 +425,7 @@ canvas.addEventListener('mousemove', (event) => {
     }
     const op = state.settings.heatmapOp;
     const entry = state.stats[op][`${hit.a},${hit.b}`];
-    const text = `${hit.a} ${OPS[op].symbol} ${hit.b}`;
+    const text = `${hit.a} ${OPS[op].symbol} ${hit.b} = ${OPS[op].compute(hit.a, hit.b)}`;
     tooltip.innerHTML = entry
         ? `<strong>${text}</strong><br>${entry[0] - entry[1]} / ${entry[0]} correct (${Math.round((100 * (entry[0] - entry[1])) / entry[0])}%)<br>recent accuracy (EMA) ${Math.round(100 * emaAccuracy(entry))}%<br>avg ${(entry[2] / entry[0] / 1000).toFixed(2)} s`
         : `<strong>${text}</strong><br><span class="muted">not tried yet</span>`;
