@@ -47,5 +47,12 @@
         "group": "Knowledge",
         "description": "Drill multiplication and division tables with a timed arrow-key game and accuracy heatmap",
         "icon": "calculate"
+    },
+    {
+        "id": "salary-converter",
+        "name": "Salary Converter",
+        "group": "Finance",
+        "description": "Convert between yearly, monthly and hourly salary, before and after tax",
+        "icon": "payments"
     }
 ]

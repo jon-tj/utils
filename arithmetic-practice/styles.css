@@ -112,6 +112,38 @@ h4 {
     border-color: #c0392b;
 }
 
+.game[data-input='choice'] .typed-form,
+.game[data-input='typing'] .option {
+    display: none;
+}
+
+.game[data-input='typing'] .cross {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+        'prompt'
+        'typed';
+}
+
+.typed-form input {
+    width: 100%;
+    box-sizing: border-box;
+    text-align: center;
+    font-size: 1.6rem;
+    font-variant-numeric: tabular-nums;
+    border: 2px solid #ccc;
+    background: white;
+}
+
+.typed-form input.correct {
+    background: #dff3e4;
+    border-color: #2e8b57;
+}
+
+.typed-form input.wrong {
+    background: #f8dede;
+    border-color: #c0392b;
+}
+
 .feedback {
     margin: 0;
     text-align: center;

@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Salary Converter</title>
+        <link href="../shared/theme.css" rel="stylesheet" />
+        <link href="styles.css" rel="stylesheet" />
+        <link rel="icon" href="../shared/favicon.png" />
+    </head>
+    <body>
+        <main>
+            <h3>Salary Converter</h3>
+            <hr />
+            <form id="salary-form" class="card" autocomplete="off">
+                <h4>Context</h4>
+                <section>
+                    <label for="workdayHours">Hours per workday</label>
+                    <input type="number" step="any" min="0" id="workdayHours" value="8" />
+                </section>
+                <section>
+                    <label for="workdaysPerWeek">Workdays per week</label>
+                    <input type="number" step="any" min="0" id="workdaysPerWeek" value="5" />
+                </section>
+                <section>
+                    <label for="weeksPerYear">Weeks per year</label>
+                    <input type="number" step="any" min="0" id="weeksPerYear" value="52" />
+                </section>
+                <section>
+                    <label for="paidDaysOff">Paid days off per year</label>
+                    <input type="number" step="any" min="0" id="paidDaysOff" value="20" />
+                </section>
+                <section>
+                    <label for="taxRate">Tax rate (%)</label>
+                    <input type="number" step="any" min="0" max="100" id="taxRate" value="30" />
+                </section>
+                <p class="muted summary" data-slot="hours-summary">&mdash;</p>
+
+                <hr />
+
+                <h4>Before tax</h4>
+                <section>
+                    <label for="yearlySalary">Yearly</label>
+                    <input type="number" step="any" min="0" id="yearlySalary" data-salary="yearly" data-taxed="false" />
+                </section>
+                <section>
+                    <label for="monthlySalary">Monthly</label>
+                    <input type="number" step="any" min="0" id="monthlySalary" data-salary="monthly" data-taxed="false" />
+                </section>
+                <section>
+                    <label for="hourlySalary">Hourly</label>
+                    <input type="number" step="any" min="0" id="hourlySalary" data-salary="hourly" data-taxed="false" />
+                </section>
+
+                <hr />
+
+                <h4>After tax</h4>
+                <section>
+                    <label for="yearlySalaryTaxed">Yearly</label>
+                    <input type="number" step="any" min="0" id="yearlySalaryTaxed" data-salary="yearly" data-taxed="true" />
+                </section>
+                <section>
+                    <label for="monthlySalaryTaxed">Monthly</label>
+                    <input type="number" step="any" min="0" id="monthlySalaryTaxed" data-salary="monthly" data-taxed="true" />
+                </section>
+                <section>
+                    <label for="hourlySalaryTaxed">Hourly</label>
+                    <input type="number" step="any" min="0" id="hourlySalaryTaxed" data-salary="hourly" data-taxed="true" />
+                </section>
+
+                <section class="form-handles">
+                    <button type="button" class="transparent" id="btn-reset">Reset</button>
+                </section>
+            </form>
+            <div class="card note">
+                <em>
+                    Edit any salary field and the others update automatically.
+                    Hourly rates are based on hours actually worked, i.e. paid
+                    days off are subtracted from the working year.
+                </em>
+            </div>
+        </main>
+        <script type="module" src="scripts/main.js"></script>
+    </body>
+</html>

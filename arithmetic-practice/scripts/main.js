@@ -1,4 +1,4 @@
-import { OPS, formatAnswer, makeQuestion } from './arithmetic.js';
+import { OPS, checkTypedAnswer, formatAnswer, makeQuestion } from './arithmetic.js';
 
 const STORAGE_KEY = 'arithmetic-practice';
 const KEY_TO_INDEX = {
@@ -28,7 +28,11 @@ const UNTRIED = '#e8e8e8';
 const opSelect = document.getElementById('op');
 const sizeSelect = document.getElementById('size');
 const limitSelect = document.getElementById('limit');
+const inputSelect = document.getElementById('input-mode');
 const heatmapOpSelect = document.getElementById('heatmap-op');
+const gameSection = document.querySelector('.game');
+const typedForm = document.getElementById('typed-form');
+const typedInput = document.getElementById('typed-input');
 const btnStart = document.getElementById('btn-start');
 const btnReset = document.getElementById('btn-reset');
 const promptEl = document.getElementById('prompt');
@@ -48,7 +52,7 @@ let hoverCell = null;
 
 function load() {
     const fallback = {
-        settings: { op: 'mul', n: 10, limit: 2, heatmapOp: 'mul' },
+        settings: { op: 'mul', n: 10, limit: 2, input: 'choice', heatmapOp: 'mul' },
         stats: { mul: {}, div: {} },
         highScores: {},
     };
@@ -140,10 +144,12 @@ function newSession() {
     return { lives: START_LIVES, score: 0, answered: 0, correct: 0, streak: 0 };
 }
 
-// High scores are kept per operation, matrix size and time limit so runs are comparable
+const isTyping = () => state.settings.input === 'typing';
+
+// High scores are kept per operation, matrix size, time limit and input method so runs are comparable
 function highScoreKey() {
     const { op, n, limit } = state.settings;
-    return `${op}-${n}-${limit}`;
+    return `${op}-${n}-${limit}${isTyping() ? '-typing' : ''}`;
 }
 
 // Harder pairs (low accuracy) and faster answers are worth more
@@ -167,6 +173,9 @@ function clearBoard() {
         btn.querySelector('.option-value').textContent = '';
         btn.className = 'option';
     }
+    typedInput.value = '';
+    typedInput.className = '';
+    typedInput.disabled = true;
     btnStart.textContent = 'Start';
 }
 
@@ -214,6 +223,12 @@ function nextQuestion() {
         btn.className = 'option';
         btn.querySelector('.option-value').textContent = question.options[i];
     });
+    if (isTyping()) {
+        typedInput.value = '';
+        typedInput.className = '';
+        typedInput.disabled = false;
+        typedInput.focus();
+    }
 
     const limitMs = state.settings.limit * 1000;
     resetTimer();
@@ -225,7 +240,8 @@ function nextQuestion() {
     game.timeoutId = setTimeout(() => answer(null), limitMs);
 }
 
-function answer(index) {
+// response is an option index (multiple choice), the typed text (text input), or null on timeout
+function answer(response) {
     if (game.phase !== 'question') return;
     clearTimeout(game.timeoutId);
     game.phase = 'feedback';
@@ -233,8 +249,12 @@ function answer(index) {
     const question = game.question;
     const limitMs = state.settings.limit * 1000;
     const elapsed = Math.min(performance.now() - game.startedAt, limitMs);
-    const timedOut = index === null || elapsed >= limitMs;
-    const isCorrect = !timedOut && index === question.correctIndex;
+    const timedOut = response === null || elapsed >= limitMs;
+    const isCorrect =
+        !timedOut &&
+        (isTyping()
+            ? checkTypedAnswer(response, OPS[question.op].compute(question.a, question.b))
+            : response === question.correctIndex);
 
     const width = getComputedStyle(timerFill).width;
     timerFill.style.transition = 'none';
@@ -253,12 +273,19 @@ function answer(index) {
         session.lives -= 1;
     }
 
-    optionButtons[question.correctIndex].classList.add('correct');
-    if (index !== null && !isCorrect) optionButtons[index].classList.add('wrong');
+    if (isTyping()) {
+        typedInput.disabled = true;
+        typedInput.className = isCorrect ? 'correct' : 'wrong';
+    } else {
+        optionButtons[question.correctIndex].classList.add('correct');
+        if (response !== null && !isCorrect) optionButtons[response].classList.add('wrong');
+    }
     if (isCorrect) {
         feedbackEl.textContent = `✓ +${points} · ${(elapsed / 1000).toFixed(2)} s`;
     } else if (timedOut) {
         feedbackEl.textContent = `⏱ Too slow! ${question.text} = ${question.answer}`;
+    } else if (isTyping()) {
+        feedbackEl.textContent = `✗ You typed ${response.trim()} · ${question.text} = ${question.answer}`;
     } else {
         feedbackEl.textContent = `✗ ${question.text} = ${question.answer}`;
     }
@@ -456,6 +483,8 @@ function applySettings() {
     opSelect.value = state.settings.op;
     sizeSelect.value = state.settings.n;
     limitSelect.value = state.settings.limit;
+    inputSelect.value = state.settings.input;
+    gameSection.dataset.input = state.settings.input;
     heatmapOpSelect.value = state.settings.heatmapOp;
 }
 
@@ -474,6 +503,7 @@ function onSettingChange(key, parse = (v) => v) {
 opSelect.addEventListener('change', onSettingChange('op'));
 sizeSelect.addEventListener('change', onSettingChange('n', Number));
 limitSelect.addEventListener('change', onSettingChange('limit', Number));
+inputSelect.addEventListener('change', onSettingChange('input'));
 heatmapOpSelect.addEventListener('change', onSettingChange('heatmapOp'));
 
 const isPlaying = () => game.phase === 'question' || game.phase === 'feedback';
@@ -485,6 +515,11 @@ optionButtons.forEach((btn, i) =>
         answer(i);
     }),
 );
+
+typedForm.addEventListener('submit', (event) => {
+    event.preventDefault();
+    if (typedInput.value.trim()) answer(typedInput.value);
+});
 
 btnReset.addEventListener('click', () => {
     if (!confirm('Reset all multiplication and division statistics?')) return;
@@ -506,7 +541,7 @@ document.addEventListener('keydown', (event) => {
         stopGame();
         return;
     }
-    if (event.key in KEY_TO_INDEX) {
+    if (!isTyping() && event.key in KEY_TO_INDEX) {
         event.preventDefault();
         answer(KEY_TO_INDEX[event.key]);
     }

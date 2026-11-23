@@ -1,0 +1,28 @@
+main {
+    width: min(100%, 650px);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+form h4 {
+    margin: 0;
+}
+
+form hr {
+    width: 100%;
+    margin: 0.5rem 0;
+}
+
+.summary {
+    margin: 0;
+    font-size: 0.85rem;
+}
+
+.form-handles {
+    margin-top: 0.5rem;
+}
+
+.note {
+    background-color: var(--color-note-background);
+}

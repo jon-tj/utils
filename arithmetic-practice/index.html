@@ -42,6 +42,13 @@
                                 <option value="5">5 s</option>
                             </select>
                         </label>
+                        <label>
+                            Input
+                            <select id="input-mode">
+                                <option value="choice">Multiple choice</option>
+                                <option value="typing">Text input</option>
+                            </select>
+                        </label>
                         <button id="btn-start" class="primary">Start</button>
                     </div>
 
@@ -61,6 +68,17 @@
                         <button class="option" data-index="3" style="grid-area: down">
                             <span class="option-value"></span><kbd>↓ S</kbd>
                         </button>
+                        <form id="typed-form" class="typed-form" style="grid-area: typed">
+                            <input
+                                id="typed-input"
+                                type="text"
+                                inputmode="decimal"
+                                autocomplete="off"
+                                placeholder="Type answer, press Enter"
+                                aria-label="Answer"
+                                disabled
+                            />
+                        </form>
                     </div>
 
                     <p class="feedback" id="feedback">&nbsp;</p>
@@ -71,7 +89,7 @@
                         <span>High score <strong data-slot="high-score">0</strong></span>
                     </div>
                     <p class="muted hint">
-                        Arrow keys or WASD pick an answer · Space starts · Esc stops.
+                        Multiple choice: arrow keys or WASD · Text input: type and press Enter · Space starts · Esc stops.
                         Division answers are rounded to 3 decimals.
                     </p>
                 </section>

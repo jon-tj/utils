@@ -14,6 +14,17 @@ export function formatAnswer(value) {
     return value.toFixed(3);
 }
 
+// Typed answers must match to 3 decimals and carry at least 3 decimals unless the exact answer is shorter:
+// for 1/3 "0.333" and "0.3333" pass, "0.33" fails; for 1/2 "0.5" passes. A decimal comma is accepted.
+export function checkTypedAnswer(text, value) {
+    const normalized = text.trim().replace(',', '.');
+    if (!/^\d+(\.\d*)?$|^\.\d+$/.test(normalized)) return false;
+    const typed = Number(normalized);
+    if (Math.round(typed * 1000) !== Math.round(value * 1000)) return false;
+    const decimals = normalized.split('.')[1]?.length ?? 0;
+    return isExact(value) || decimals >= 3;
+}
+
 function shuffle(items) {
     for (let i = items.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
